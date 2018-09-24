@@ -10,7 +10,7 @@ import org.cloudbus.cloudsim.network.exDatacenter.NetworkCloudlet;
 import org.cloudbus.cloudsim.network.exDatacenter.NetworkConstants;
 
 public class InfluxdbWorkload {
-	private String datasetPath;
+	private String datasetPath;  ///jsonDS/result1.json
 	private InfluxdbDataset dataset;
 	private List<AppCloudlet> applicatonList;
 	
@@ -23,7 +23,6 @@ public class InfluxdbWorkload {
 	public InfluxdbWorkload(String datasetPathInput){
 		this.datasetPath = datasetPathInput;
 		dataset = new InfluxdbDataset(datasetPath);
-		
 		applicatonList = new ArrayList<AppCloudlet>();
 	}
 	
@@ -32,22 +31,25 @@ public class InfluxdbWorkload {
 		AppCloudlet curApp = null;
 		NetworkCloudlet curCl = null;
 		
-		readDatasetNextLine();
-		if(dataset.appId == oldAppId){
+		while(this.readDatasetNextLine()){
+		//	System.out.println("compare "+dataset.appId+" with "+oldAppId+" is "+(dataset.cloudletId == oldCldId));
+		if(dataset.appId.equals(oldAppId)){
 			//Data belongs to current application
-			if(dataset.cloudletId == oldAppId) {
+			if(dataset.cloudletId.equals(oldCldId)) {
 				//Data belongs to current cloudlet
 				//create a new stage
-				boolean result = manageStages(curApp, curCl);
+				System.out.println("new stage .... ");
+				//boolean result = manageStages(curApp, curCl);
 				stageId++;
 			}
 			else{
 				//create a new cloudlet along with its first stage
 				stageId = 0;
 				cldNO++;
-				curCl=newCloudlet();
-				curApp.addCloudletToList(curCl);
-				oldAppId=dataset.cloudletId;
+				//curCl=newCloudlet();
+				System.out.println("new cloudlet with Id "+dataset.cloudletId +", cpu:"+dataset.pesNumber+",mem:"+dataset.memory);
+				//curApp.addCloudletToList(curCl);
+				oldCldId=dataset.cloudletId;
 			}
 		}
 		else{
@@ -55,9 +57,11 @@ public class InfluxdbWorkload {
 			// and its first stage
 			stageId = 0;
 			cldNO = 0;
-			curApp = newApplication();
-			applicatonList.add(curApp);
+			//curApp = newApplication();
+			System.out.println("new app with Id "+dataset.appId);
+			//applicatonList.add(curApp);
 			oldAppId = dataset.appId;
+		}
 		}
 		return applicatonList;
 	}
@@ -68,9 +72,9 @@ public class InfluxdbWorkload {
 	
 	private boolean manageStages(AppCloudlet app, NetworkCloudlet cl){
 		// create new stage based on dataset info
-		//for execution satge we add an stage
+		//for execution satge we add a stage
 		
-		//for data transfering stage we add a record in application map
+		//for data transferring stage we add a record in application map
 		int resiverId=0;
 		double dataMB = 0.0;
 		if(app.SendDataTo == null){

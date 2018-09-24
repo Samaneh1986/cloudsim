@@ -208,7 +208,8 @@ public class ManageWorkload {
 			
 			/// app 1 cloudlet 0 ............................. these numbers are indexes not Ids
 				Map<int[],Double> cl_0 = new HashMap<int[],Double>();
-				cl_0.put(new int[]{1,1}, 10.0);
+				// int[]{i,j} -> i is the stage no and j is the index of receiver cloudlet 
+				cl_0.put(new int[]{1,1}, 10.0); 
 				cl_0.put(new int[]{2,2}, 90.0);
 			app1.SendDataTo.add(cl_0);
 			/// app 1 cloudlet 1 

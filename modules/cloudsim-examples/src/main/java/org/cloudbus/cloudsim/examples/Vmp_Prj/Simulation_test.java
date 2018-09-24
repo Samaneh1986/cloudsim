@@ -39,9 +39,7 @@ public class Simulation_test {
 			int num_user = 5;   
 			calendar = Calendar.getInstance();
 			boolean trace_flag = false; // mean trace events 
-			CloudSim.init(num_user, calendar, trace_flag);
-			String rsltFileName = "Sim_result_"+calendar.getTime().toString();
-			//DCMngUtility.resultFile =  new PrintWriter(rsltFileName);
+			CloudSim.init(num_user, calendar, trace_flag); 
 			// Create data center
 			//mDc = new ManageDatacenter("Datacenter_001","RANDOM");
 			mDc = new ManageDatacenter("Datacenter_001","TDB");
@@ -52,30 +50,34 @@ public class Simulation_test {
 			NetDatacenterBroker.setLinkDC(datacenter001);
 			broker = mDc.createBroker("broker_001");
 			brokerId = broker.getId();
+			//
+			String workingDirectory = System.getProperty("user.dir");
+			InfluxdbWorkload ds = new InfluxdbWorkload(workingDirectory+"/src/main/java/org/cloudbus/cloudsim/examples/Vmp_Prj/jsonDS/result1.json");
+			ds.createWorkload();
 			// create initial VMs
-			vmlist = ManageWorkload.create_5member_VMlist(brokerId,1);// total 8 VMs
-			vmlist.addAll(ManageWorkload.create_5member_VMlist(brokerId,1));// total 16 VMs
-			vmlist.addAll(ManageWorkload.create_5member_VMlist(brokerId,1));// total 24 VMs
-			vmlist.addAll(ManageWorkload.create_5member_VMlist(brokerId,1));// total 32 VMs
-			vmlist.addAll(ManageWorkload.create_5member_VMlist(brokerId,1));// total 40 VMs
-			vmlist.addAll(ManageWorkload.create_5member_VMlist(brokerId,1));// total 48 VMs
+			//vmlist = ManageWorkload.create_5member_VMlist(brokerId,1);// total 8 VMs
+			//vmlist.addAll(ManageWorkload.create_5member_VMlist(brokerId,1));// total 16 VMs
+			//vmlist.addAll(ManageWorkload.create_5member_VMlist(brokerId,1));// total 24 VMs
+			//vmlist.addAll(ManageWorkload.create_5member_VMlist(brokerId,1));// total 32 VMs
+			//vmlist.addAll(ManageWorkload.create_5member_VMlist(brokerId,1));// total 40 VMs
+			//vmlist.addAll(ManageWorkload.create_5member_VMlist(brokerId,1));// total 48 VMs
 			// assign VMs to broker related variable
-			broker.CreateCustomVMs(datacenter001.getId(),vmlist);
+			//broker.CreateCustomVMs(datacenter001.getId(),vmlist);
 			// create initial cloudletApp
-			appList = ManageWorkload.createCloudlet(brokerId,1); // total 8 cloudlets
-			appList.addAll( ManageWorkload.createCloudlet(brokerId,1));// total 16 cloudlets
-			appList.addAll( ManageWorkload.createCloudlet(brokerId,1));// total 24 cloudlets
-			appList.addAll( ManageWorkload.createCloudlet(brokerId,1));// total 32 cloudlets
-			appList.addAll( ManageWorkload.createCloudlet(brokerId,1));// total 40 cloudlets
-			appList.addAll( ManageWorkload.createCloudlet(brokerId,1));// total 48 cloudlets
-			broker.getAppCloudletList().addAll(appList); 
+			//appList = ManageWorkload.createCloudlet(brokerId,1); // total 8 cloudlets
+			//appList.addAll( ManageWorkload.createCloudlet(brokerId,1));// total 16 cloudlets
+			//appList.addAll( ManageWorkload.createCloudlet(brokerId,1));// total 24 cloudlets
+			//appList.addAll( ManageWorkload.createCloudlet(brokerId,1));// total 32 cloudlets
+			//appList.addAll( ManageWorkload.createCloudlet(brokerId,1));// total 40 cloudlets
+			//appList.addAll( ManageWorkload.createCloudlet(brokerId,1));// total 48 cloudlets
+			//broker.getAppCloudletList().addAll(appList); 
 			
 			
-			CloudSim.startSimulation();
+		//	CloudSim.startSimulation();
 			
 			List<Cloudlet> newList = broker.getCloudletSubmittedList();
 			
-			CloudSim.stopSimulation();
+		//	CloudSim.stopSimulation();
 
 			// Print results when simulation is over
 			printCloudletList(newList);
