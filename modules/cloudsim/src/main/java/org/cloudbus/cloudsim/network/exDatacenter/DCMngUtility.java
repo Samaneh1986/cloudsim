@@ -2,6 +2,7 @@ package org.cloudbus.cloudsim.network.exDatacenter;
 
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -24,7 +25,7 @@ public class DCMngUtility {
 	
 	public static void defineStagesOfTable(AppCloudlet app){
 	//	System.out.println("in defineStagesOfTable .....");
-		ArrayList<Map<int[], Double>> dataTable = app.SendDataTo;
+		Map<Integer,Map<int[],Double>> dataTable = app.SendDataTo;
 	//	System.out.println("data table size :" +  dataTable.size());
 	/**	double time = 0;
 		UniformDistr ufrnd = new UniformDistr(2, 8);
@@ -37,25 +38,31 @@ public class DCMngUtility {
 		for (int i = 0; i < dataTable.size() ; i++) {
 		//	System.out.println("first reciever no :"+dataTable.get(i).get(0));
 			Map<int[], Double> cur_cloudlet = dataTable.get(i); 
-		    for (int[] stg_vm : dataTable.get(i).keySet()){ 
-		    	if(stg_vm[0]!= -1){
+			int tot_stage = dataTable.get(i).keySet().size();
+
+			for (int s = 1 ; s < tot_stage+1 ; s++){ 
+		    for (int[] stg_vm : dataTable.get(i).keySet()){  
+		    //	int[] stg_vm = dataTable.get(i).keySet().iterator().;
+		    	//System.out.println("app "+app.appID+", table row "+i+", dst cl index is"+stg_vm[1]);
+		    	if(stg_vm[0]== s){
 		    		int vmId = app.clist.get(stg_vm[1]).getVmId();
 		    		int clId = app.clist.get(stg_vm[1]).getCloudletId();
 		    		double data = cur_cloudlet.get(stg_vm);
 		    		if(data > 0){
-		    		//	System.out.println("Ad  Stage "+stg_vm[0]+" for CL "+app.clist.get(i).getCloudletId()+" on VM"+app.clist.get(i).getVmId()
-		    		//			+" Sending "+data+" to CL "+clId+" on VM "+vmId);
+		    			System.out.println("Ad  Stage "+stg_vm[0]+" for CL "+app.clist.get(i).getCloudletId()+" on VM"+app.clist.get(i).getVmId()
+		    					+" Sending "+data+" to CL "+clId+" on VM "+vmId);
 		    			app.clist.get(i).stages.add(new TaskStage(NetworkConstants.WAIT_SEND, data,  0, stg_vm[0], 150, vmId,clId));
 		    		}else{
 		    			data = Math.abs(data);
-		    		//	System.out.println("Ad  Stage "+stg_vm[0]+" for CL "+app.clist.get(i).getCloudletId()+" on VM"+app.clist.get(i).getVmId()
-		    		//			+" receiving "+data+" from CL "+clId+" on VM "+vmId);
+		    			System.out.println("Ad  Stage "+stg_vm[0]+" for CL "+app.clist.get(i).getCloudletId()+" on VM"+app.clist.get(i).getVmId()
+		    					+" receiving "+data+" from CL "+clId+" on VM "+vmId);
 		    			app.clist.get(i).stages.add(new TaskStage(NetworkConstants.WAIT_RECV, data,  0, stg_vm[0], 150, vmId,clId));
 			    		}
-		    		app.clist.get(i).numStage++;
+		    		//app.clist.get(i).numStage++;
 		    		}
 		    }
 		    }
+		}
 		 
 		/**for (int i = 0; i < app.clist.size() ; i++) { 
 			app.clist.get(i).stages.add(new TaskStage(NetworkConstants.EXECUTION, 0,  500, app.clist.get(i).numStage, 150, 0, 0));

@@ -2,6 +2,7 @@ package org.cloudbus.cloudsim.network.exDatacenter;
 
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -24,7 +25,7 @@ public class DCMngUtility_old {
 	
 	public static void defineStagesOfTable(AppCloudlet app){
 		System.out.println("in defineStagesOfTable .....");
-		ArrayList<Map<int[], Double>> dataTable = app.SendDataTo;
+		Map<Integer,Map<int[],Double>> dataTable = app.SendDataTo;
 		System.out.println("data table size :" +  dataTable.size());
 	/**	double time = 0;
 		UniformDistr ufrnd = new UniformDistr(2, 8);

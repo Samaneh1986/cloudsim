@@ -9,6 +9,7 @@
 package org.cloudbus.cloudsim.network.exDatacenter;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -96,7 +97,8 @@ public class AppCloudlet {
 	// this variable determine in which stage, to whom cl, how much data should be send
 	// int[] has 2 member: first one is the stage and the second one is the cloudlet index
 	// Double is the amount of data in MB which has to be send
-	public ArrayList<Map<int[],Double>> SendDataTo;
+	public Map<Integer,Map<int[],Double>> SendDataTo;
+	 
 
 	public AppCloudlet(int type, int appID, double deadline, int numbervm, int userId) {
 		super();
@@ -106,6 +108,7 @@ public class AppCloudlet {
 		this.numbervm = numbervm;
 		this.userId = userId;
 		clist = new ArrayList<NetworkCloudlet>();
+		SendDataTo = new HashMap<Integer,Map<int[],Double>>();
 	}
 
 	/**

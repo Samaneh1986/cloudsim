@@ -105,12 +105,12 @@ public class NetworkCloudletSpaceSharedScheduler extends CloudletScheduler {
 			if ((cl.currStagenum != -1)) {
 				if (cl.currStagenum == NetworkConstants.FINISH) {
 
-					//System.out.println("Stage for cl "+cl.getCloudletId()+"is FINISH 1 ");
+				System.out.println("Stage for cl "+cl.getCloudletId()+"is FINISH 1 ");
 					break;
 				}
 				TaskStage st = cl.stages.get(cl.currStagenum);
 				if (st.type == NetworkConstants.EXECUTION) {
-				//	System.out.println("Stage for cl "+cl.getCloudletId()+"is EXE ");
+					//System.out.println("Stage for cl "+cl.getCloudletId()+"is EXE ");
 					// update the time
 					cl.timespentInStage = Math.round(CloudSim.clock() - cl.timetostartStage);
 					if (cl.timespentInStage >= st.time) {
@@ -121,10 +121,12 @@ public class NetworkCloudletSpaceSharedScheduler extends CloudletScheduler {
 
 				
 				if (st.type == NetworkConstants.WAIT_RECV) {
-					//System.out.println("Stage for cl "+cl.getCloudletId()+"is WAIT_RECV ");
+				//	System.out.println("Stage "+cl.currStagenum+" for cl "+cl.getCloudletId()+"is WAIT_RECV for "+st.peer);
 					List<HostPacket> pktlist = pktrecv.get(st.peer);
+				//	System.out.println("packet size is "+pktlist.size());
 					List<HostPacket> pkttoremove = new ArrayList<HostPacket>();
 					if (pktlist != null) {
+				//		System.out.println("packet size is "+pktlist.size());
 						Iterator<HostPacket> it = pktlist.iterator();
 						HostPacket pkt = null;
 						if (it.hasNext()) {
@@ -144,7 +146,7 @@ public class NetworkCloudletSpaceSharedScheduler extends CloudletScheduler {
 				}
 
 			} else {
-				//System.out.println("Stage for cl "+cl.getCloudletId()+"is OTHER ");
+			//	System.out.println("Stage for cl "+cl.getCloudletId()+"is OTHER ");
 				cl.currStagenum = 0;
 				cl.timetostartStage = CloudSim.clock();
 

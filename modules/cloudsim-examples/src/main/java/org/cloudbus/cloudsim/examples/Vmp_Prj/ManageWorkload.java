@@ -86,7 +86,7 @@ public class ManageWorkload {
 		if(jobTyp == 1){
 			app1 = new AppCloudlet(AppCloudlet.APP_BigData, NetworkConstants.currentAppId, 0, 5, brokerId);
 			app1.is_proccessed = 0;
-			app1.SendDataTo = new ArrayList<Map<int[],Double>>();   
+		//	app1.SendDataTo = HashMap<Integer,Map<int[],Double>>();   
 			
 			length = 27020;
 			fileSize = 3;
@@ -210,33 +210,41 @@ public class ManageWorkload {
 				Map<int[],Double> cl_0 = new HashMap<int[],Double>();
 				// int[]{i,j} -> i is the stage no and j is the index of receiver cloudlet 
 				cl_0.put(new int[]{1,1}, 10.0); 
+				app1.clist.get(0).numStage++;
 				cl_0.put(new int[]{2,2}, 90.0);
-			app1.SendDataTo.add(cl_0);
+				app1.clist.get(0).numStage++;
+			app1.SendDataTo.put(0,cl_0);
 			/// app 1 cloudlet 1 
 				Map<int[],Double> cl_1 = new HashMap<int[],Double>();
 				cl_1.put(new int[]{1,0}, -10.0);
+				app1.clist.get(1).numStage++;
 				cl_1.put(new int[]{3,2}, 40.0);
-			app1.SendDataTo.add(cl_1);
+				app1.clist.get(1).numStage++;
+			app1.SendDataTo.put(1,cl_1);
 			/// app 1 cloudlet 2 
 				Map<int[],Double> cl_2 = new HashMap<int[],Double>();
 				cl_2.put(new int[]{1,0}, -90.0);
+				app1.clist.get(2).numStage++;
 				cl_2.put(new int[]{3,1}, -40.0);
-			app1.SendDataTo.add(cl_2);
+				app1.clist.get(2).numStage++;
+			app1.SendDataTo.put(2,cl_2);
 			/// app 1 cloudlet 3 
 				Map<int[],Double> cl_3 = new HashMap<int[],Double>();
 				cl_3.put(new int[]{1,4}, 45.0);
-			app1.SendDataTo.add(cl_3);
+				app1.clist.get(3).numStage++;
+			app1.SendDataTo.put(3,cl_3);
 			/// app 1 cloudlet 4
 				Map<int[],Double> cl_4 = new HashMap<int[],Double>(); 
 				cl_4.put(new int[]{1,3}, -45.0);
-			app1.SendDataTo.add(cl_4);
+				app1.clist.get(4).numStage++;
+			app1.SendDataTo.put(4,cl_4);
 			applist.add(app1);
 			NetworkConstants.currentAppId++;
 			
 		
 			app2 = new AppCloudlet(AppCloudlet.APP_BigData, NetworkConstants.currentAppId, 0, 3, brokerId);
 			app2.is_proccessed = 0;
-			app2.SendDataTo = new ArrayList<Map<int[],Double>>();  
+			//app2.SendDataTo = HashMap<Integer,Map<int[],Double>>(); 
 			
 			length = 296000;
 			fileSize = 1;
@@ -312,16 +320,20 @@ public class ManageWorkload {
 				/// app 2 cloudlet 0
 				Map<int[],Double> cl_5 = new HashMap<int[],Double>();
 				cl_5.put(new int[]{1,2}, 60.0); 
-				app2.SendDataTo.add(cl_5);
+				app2.clist.get(0).numStage++;
+				app2.SendDataTo.put(0,cl_5);
 				/// app 2 cloudlet 1
 				Map<int[],Double> cl_6 = new HashMap<int[],Double>();
 				cl_6.put(new int[]{1,2}, 65.0);
-				app2.SendDataTo.add(cl_6);
+				app2.clist.get(1).numStage++;
+				app2.SendDataTo.put(1,cl_6);
 				/// app 2 cloudlet 2
 				Map<int[],Double> cl_7 = new HashMap<int[],Double>();
 				cl_7.put(new int[]{1,0}, -60.0);
+				app2.clist.get(2).numStage++;
 				cl_7.put(new int[]{3,1}, -65.0);
-				app2.SendDataTo.add(cl_7); 
+				app2.clist.get(2).numStage++;
+				app2.SendDataTo.put(2,cl_7); 
 			
 			applist.add(app2);
 			NetworkConstants.currentAppId++;
@@ -329,7 +341,7 @@ public class ManageWorkload {
 		if(jobTyp == 2){ // userId 5 status 1
 			app1 = new AppCloudlet(AppCloudlet.APP_BigData, NetworkConstants.currentAppId, 0, 9, brokerId);
 			app1.is_proccessed = 0;
-			app1.SendDataTo = new ArrayList<Map<int[],Double>>();   
+			//app1.SendDataTo = HashMap<Integer,Map<int[],Double>>();
 			
 			length = 1096340;
 			fileSize = 126;
@@ -545,44 +557,58 @@ public class ManageWorkload {
 			/// app 1 cloudlet 0 ............................. these numbers are indexes not Ids
 				Map<int[],Double> cl_0 = new HashMap<int[],Double>();
 				cl_0.put(new int[]{1,2}, 80.0); 
-			app1.SendDataTo.add(cl_0);
+				app1.clist.get(0).numStage++;
+			app1.SendDataTo.put(0,cl_0);
 			/// app 1 cloudlet 1 
 				Map<int[],Double> cl_1 = new HashMap<int[],Double>(); 
 				cl_1.put(new int[]{1,3}, 76.0);
-			app1.SendDataTo.add(cl_1);
+				app1.clist.get(1).numStage++;
+			app1.SendDataTo.put(1,cl_1);
 			/// app 1 cloudlet 2 
 				Map<int[],Double> cl_2 = new HashMap<int[],Double>();
 				cl_2.put(new int[]{1,0}, -80.0);
+				app1.clist.get(2).numStage++;
 				cl_2.put(new int[]{3,4},  40.0);
+				app1.clist.get(2).numStage++;
 				cl_2.put(new int[]{4,6},  55.0);
+				app1.clist.get(2).numStage++;
 				cl_2.put(new int[]{5,8},  45.0);
-			app1.SendDataTo.add(cl_2);
+				app1.clist.get(2).numStage++;
+			app1.SendDataTo.put(2,cl_2);
 			/// app 1 cloudlet 3 
 				Map<int[],Double> cl_3 = new HashMap<int[],Double>();
 				cl_3.put(new int[]{1,1}, -76.0);
+				app1.clist.get(3).numStage++;
 				cl_3.put(new int[]{3,5},  40.0);
+				app1.clist.get(3).numStage++;
 				cl_3.put(new int[]{4,7},  55.0);
-			app1.SendDataTo.add(cl_3);
+				app1.clist.get(3).numStage++;
+			app1.SendDataTo.put(3,cl_3);
 			/// app 1 cloudlet 4
 				Map<int[],Double> cl_4 = new HashMap<int[],Double>(); 
 				cl_4.put(new int[]{1,2}, -40.0);
-			app1.SendDataTo.add(cl_4);
+				app1.clist.get(4).numStage++;
+			app1.SendDataTo.put(4,cl_4);
 			/// app 1 cloudlet 5
 			Map<int[],Double> cl_5 = new HashMap<int[],Double>();
 			cl_5.put(new int[]{1,3}, -40.0); 
-			app1.SendDataTo.add(cl_5);
+			app1.clist.get(5).numStage++;
+			app1.SendDataTo.put(5,cl_5);
 			/// app 1 cloudlet 6
 			Map<int[],Double> cl_6 = new HashMap<int[],Double>();
 			cl_6.put(new int[]{1,2}, -55.0);
-			app1.SendDataTo.add(cl_6); 
+			app1.clist.get(6).numStage++;
+			app1.SendDataTo.put(6,cl_6); 
 			/// app 1 cloudlet 7
 			Map<int[],Double> cl_7 = new HashMap<int[],Double>();
 			cl_7.put(new int[]{1,3}, -55.0); 
-			app1.SendDataTo.add(cl_7);
+			app1.clist.get(7).numStage++;
+			app1.SendDataTo.put(7,cl_7);
 			/// app 1 cloudlet 8
 			Map<int[],Double> cl_8 = new HashMap<int[],Double>();
 			cl_8.put(new int[]{1,2}, -45.0);
-			app1.SendDataTo.add(cl_8);
+			app1.clist.get(8).numStage++;
+			app1.SendDataTo.put(8,cl_8);
 
 			applist.add(app1);
 			NetworkConstants.currentAppId++;

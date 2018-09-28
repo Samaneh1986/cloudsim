@@ -68,7 +68,7 @@ public class NetworkCloudlet extends Cloudlet implements Comparable<Object> {
          * @todo Required, allocated, used memory?
          * It doesn't appear to be used.
          */
-	long memory;
+	public long memory;
 
         /**
          * Cloudlet's start time.

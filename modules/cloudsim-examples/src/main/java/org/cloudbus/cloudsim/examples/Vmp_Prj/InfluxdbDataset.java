@@ -25,6 +25,13 @@ public class InfluxdbDataset {
 	public long outputSize;
 	public long memory;
 	public int pesNumber;
+	public String stageTyp;
+	public int satageNo;
+	public double data_transfered;
+	public int rcv_clId;
+	public long exec_time;
+	
+	
 	
 	
 	private  JSONObject dataOBJ;
@@ -61,6 +68,7 @@ public class InfluxdbDataset {
 			String key = datasetKeys.next();
 			JSONObject row = (JSONObject) dataOBJ.get(key);
 			//System.out.println(String.valueOf( row.get("appId")));
+			
 			this.appId = String.valueOf( row.get("appId"));
 			this.cloudletId = String.valueOf( row.get("clId"));
 			if(row.get("pe_no") != null){
@@ -70,14 +78,22 @@ public class InfluxdbDataset {
 				this.pesNumber = 0;
 			}
 			if(row.get("mem_used")!= null){
-			   double mem = Double.valueOf(String.valueOf(row.get("mem_used"))).doubleValue()/1000;
+			   double mem = Double.valueOf(String.valueOf(row.get("mem_used"))).doubleValue()/1000000;//in MB
 			   this.memory = Math.round(mem);
 			}
 			else{
 				this.memory = 0 ;
 			}
+			this.stageTyp = String.valueOf(row.get("typ"));
+			//System.out.println(key+":"+key.charAt(6));
+			this.satageNo = Integer.valueOf(String.valueOf(key.charAt(6))).intValue();
+			this.rcv_clId = Integer.valueOf(String.valueOf(row.get("rcv_clId"))).intValue();
+			double data = Double.valueOf(String.valueOf(row.get("data"))).doubleValue()/1000000;//in MB
+			this.data_transfered = data;
+			double time = Double.valueOf(String.valueOf(row.get("exec_time"))).doubleValue();
+			this.exec_time = Math.round(time);
 				
-			this.length=100;
+			this.length=40000;
 			this.fileSize=500;
 			this.outputSize=500;
 			
