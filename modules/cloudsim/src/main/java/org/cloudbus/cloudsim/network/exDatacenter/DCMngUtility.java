@@ -13,15 +13,16 @@ import org.cloudbus.cloudsim.distributions.UniformDistr;
 
 
 public class DCMngUtility {
-	public static final int LOW_RESOURCES = 0;
-	public static final int ENOUGH_RESOURCES = 1;
-	public static final int EXTRA_RESOURCES = 9;
+	//public static final int LOW_RESOURCES = 0;
+	//public static final int ENOUGH_RESOURCES = 1;
+	//public static final int EXTRA_RESOURCES = 9;
 	/***************************************/
 	public static final int VM_ALLC_PLCY_CLUSTER = 0;
 	public static final int VM_ALLC_PLCY_SINGLE = 1;
 	/***************************************/
 	//public static PrintWriter resultFile;
 	/***************************************/
+	public static DCPerformance dcPerformance;
 	
 	public static void defineStagesOfTable(AppCloudlet app){
 	//	System.out.println("in defineStagesOfTable .....");
@@ -483,6 +484,7 @@ public class DCMngUtility {
 			+ srcHost.sw.switching_delay
 			+ (8/(destHost.sw.downlinkbandwidth/((destHost.packetTosendGlobal.size()==0)?1:destHost.packetTosendGlobal.size())))
 			);
+			//delay = 0.0;
 			return delay;
 		}else{
 			String upsw11 = null;

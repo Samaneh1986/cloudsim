@@ -15,6 +15,7 @@ import org.cloudbus.cloudsim.core.CloudSim;
 import org.cloudbus.cloudsim.core.CloudSimTags;
 import org.cloudbus.cloudsim.network.exDatacenter.AppCloudlet;
 import org.cloudbus.cloudsim.network.exDatacenter.DCMngUtility;
+import org.cloudbus.cloudsim.network.exDatacenter.DCPerformance;
 import org.cloudbus.cloudsim.network.exDatacenter.NetDatacenterBroker;
 import org.cloudbus.cloudsim.network.exDatacenter.NetworkConstants;
 import org.cloudbus.cloudsim.network.exDatacenter.NetworkDatacenter;
@@ -50,13 +51,14 @@ public class Simulation_influxdb {
 			calendar = Calendar.getInstance();
 			boolean trace_flag = false; // mean trace events 
 			CloudSim.init(num_user, calendar, trace_flag);
-			String rsltFileName = "Sim_result_"+calendar.getTime().toString();
+			DCMngUtility.dcPerformance = new DCPerformance();
+			//String rsltFileName = "Sim_result_"+calendar.getTime().toString();
 			//DCMngUtility.resultFile =  new PrintWriter(rsltFileName);
 			// Create data center
 			//mDc = new ManageDatacenter("Datacenter_001","RANDOM");
 			//mDc = new ManageDatacenter("Datacenter_001","TDB");
-			//mDc = new ManageDatacenter("Datacenter_001","GREEDY");
-			mDc = new ManageDatacenter("Datacenter_001","BFT");
+			mDc = new ManageDatacenter("Datacenter_001","GREEDY");
+			//mDc = new ManageDatacenter("Datacenter_001","BFT");
 			NetworkDatacenter datacenter001 = mDc.createDatacenter();
 			// Create Broker
 			NetDatacenterBroker.setLinkDC(datacenter001);
@@ -106,9 +108,9 @@ public class Simulation_influxdb {
 						e.printStackTrace();}
 					
 				    Log.printLine(CloudSim.clock() + "<<<<<--- New Workload Added --->>>>>");
-				    InfluxdbWorkload ds2 = new InfluxdbWorkload(workingDirectory+"/src/main/java/org/cloudbus/cloudsim/examples/Vmp_Prj/jsonDS/dataSet1.json");
+				    InfluxdbWorkload ds2 = new InfluxdbWorkload(workingDirectory+"/src/main/java/org/cloudbus/cloudsim/examples/Vmp_Prj/jsonDS/dataSet3.json");
 				    List<AppCloudlet>  applist2 = ds2.createWorkload(broker2Id);
-					List<NetworkVm> vmlist2 = ds2.createVMs(broker2Id,appList);
+					List<NetworkVm> vmlist2 = ds2.createVMs(broker2Id,applist2);
 
 					broker2.CreateCustomVMs(datacenter001.getId(),vmlist2);
 					broker2.getAppCloudletList().addAll(applist2);
@@ -143,9 +145,9 @@ public class Simulation_influxdb {
 									e.printStackTrace();}
 								
 							    Log.printLine(CloudSim.clock() +"<<<<<--- New Workload Added --->>>>>");
-							    InfluxdbWorkload ds3 = new InfluxdbWorkload(workingDirectory+"/src/main/java/org/cloudbus/cloudsim/examples/Vmp_Prj/jsonDS/dataSet1.json");
+							    InfluxdbWorkload ds3 = new InfluxdbWorkload(workingDirectory+"/src/main/java/org/cloudbus/cloudsim/examples/Vmp_Prj/jsonDS/dataSet2.json");
 							    List<AppCloudlet>  applist3 = ds3.createWorkload(broker3Id);
-								List<NetworkVm> vmlist3 = ds3.createVMs(broker3Id,appList);
+								List<NetworkVm> vmlist3 = ds3.createVMs(broker3Id,applist3);
 								broker3.CreateCustomVMs(datacenter001.getId(),vmlist3);
 								broker3.getAppCloudletList().addAll(applist3);
 								broker3.schedule(broker3Id, 0, CloudSimTags.RESOURCE_CHARACTERISTICS_REQUEST);
@@ -181,7 +183,7 @@ public class Simulation_influxdb {
 										    Log.printLine(CloudSim.clock() +"<<<<<--- New Workload Added --->>>>>");
 										    InfluxdbWorkload ds4 = new InfluxdbWorkload(workingDirectory+"/src/main/java/org/cloudbus/cloudsim/examples/Vmp_Prj/jsonDS/dataSet1.json");
 										    List<AppCloudlet>  applist4 = ds4.createWorkload(broker4Id);
-											List<NetworkVm> vmlist4 = ds4.createVMs(broker4Id,appList);
+											List<NetworkVm> vmlist4 = ds4.createVMs(broker4Id,applist4);
 
 										    broker4.CreateCustomVMs(datacenter001.getId(),vmlist4);
 											broker4.getAppCloudletList().addAll(applist4);
@@ -215,9 +217,9 @@ public class Simulation_influxdb {
 												e.printStackTrace();}
 											
 										    Log.printLine(CloudSim.clock() +"<<<<<--- New Workload Added --->>>>>");
-										    InfluxdbWorkload ds5 = new InfluxdbWorkload(workingDirectory+"/src/main/java/org/cloudbus/cloudsim/examples/Vmp_Prj/jsonDS/dataSet1.json");
+										    InfluxdbWorkload ds5 = new InfluxdbWorkload(workingDirectory+"/src/main/java/org/cloudbus/cloudsim/examples/Vmp_Prj/jsonDS/dataSet3.json");
 										    List<AppCloudlet>  applist5 = ds5.createWorkload(broker5Id);
-											List<NetworkVm> vmlist5 = ds5.createVMs(broker5Id,appList);
+											List<NetworkVm> vmlist5 = ds5.createVMs(broker5Id,applist5);
 
 										    broker5.CreateCustomVMs(datacenter001.getId(),vmlist5);
 											broker5.getAppCloudletList().addAll(applist5);
@@ -251,9 +253,9 @@ public class Simulation_influxdb {
 												e.printStackTrace();}
 											
 										    Log.printLine(CloudSim.clock() +"<<<<<--- New Workload Added --->>>>>");
-										    InfluxdbWorkload ds6 = new InfluxdbWorkload(workingDirectory+"/src/main/java/org/cloudbus/cloudsim/examples/Vmp_Prj/jsonDS/dataSet1.json");
+										    InfluxdbWorkload ds6 = new InfluxdbWorkload(workingDirectory+"/src/main/java/org/cloudbus/cloudsim/examples/Vmp_Prj/jsonDS/dataSet2.json");
 										    List<AppCloudlet>  applist6 = ds6.createWorkload(broker6Id);
-											List<NetworkVm> vmlist6 = ds6.createVMs(broker6Id,appList);
+											List<NetworkVm> vmlist6 = ds6.createVMs(broker6Id,applist6);
 
 										    broker6.CreateCustomVMs(datacenter001.getId(),vmlist6);
 											broker6.getAppCloudletList().addAll(applist6);
@@ -332,6 +334,7 @@ public class Simulation_influxdb {
 				 }
 			usagemean = usagemean / totUsdHst;
 			System.out.println("Total "+totUsdHst+" hosts from "+allHst+" availbles hosts is used with mean prodactivity "+usagemean);
+			DCMngUtility.dcPerformance.switchReport();
 			
 			Log.printLine("Project simulation finished!");
 		}
@@ -354,8 +357,8 @@ public class Simulation_influxdb {
 		Log.printLine("Cloudlet ID" + indent + "STATUS" + indent + "Data center ID" + indent + "VM ID"
 				+ indent + "Time" + indent + "Start Time" + indent + "Finish Time");
 
-		jobFile.println("Cloudlet ID" + indent + "STATUS" + indent + "Data center ID" + indent + "VM ID"
-				+ indent + "Time" + indent + "Start Time" + indent + "Finish Time");
+		//jobFile.println("Cloudlet ID" + indent + "STATUS" + indent + "Data center ID" + indent + "VM ID"
+		//		+ indent + "Time" + indent + "Start Time" + indent + "Finish Time");
 		
 		DecimalFormat dft = new DecimalFormat("###.##");
 		for (int i = 0; i < size; i++) {

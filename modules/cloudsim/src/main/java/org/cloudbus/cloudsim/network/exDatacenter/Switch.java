@@ -74,6 +74,8 @@ public class Switch extends SimEntity {
 	//public List<Double> uplinkSwFullPrc;
 	public double uplinkSwSend;
 	public double uplinkSwRcv;
+	
+	private double passTime = 0;
 
         /**
          * List of downlink switches.
@@ -182,7 +184,12 @@ public class Switch extends SimEntity {
 
 	@Override
 	public void processEvent(SimEvent ev) {
-		// Log.printLine(CloudSim.clock()+"[Broker]: event received:"+ev.getTag());
+		// Log.printLine(CloudSim.clock()+"[Broker]: event received:"+ev.getTag()); 
+		if((CloudSim.clock() - passTime )>10 ){
+			DCMngUtility.dcPerformance.updateSwitchParams(this);
+			passTime = CloudSim.clock();
+		}
+		
 		switch (ev.getTag()) {
 		// Resource characteristics request
 			case CloudSimTags.Network_Event_UP:

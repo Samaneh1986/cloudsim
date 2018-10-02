@@ -34,13 +34,14 @@ public class ManageDatacenter {
 	// !!! all the Bandwidth are in MB, because of overflow!!!
 	private int EdgeSwitchPort = 40;
 	private int AggSwitchPort = 10;
-	private int RootSwitchPort = 25;
-	private long BandWidthEdgeHost = 1 * 1024; // 1gb , BW number is in MB
-	private long BandWidthEdgeAgg = 10 * 1024 ;// 10gb
-	private long BandWidthAggRoot = 10 * 1024 ;// 10gb
+	private int RootSwitchPort = 1;
+	private long BandWidthEdgeHost = 10 * 1024; // 1gb , BW number is in MB
+	private long BandWidthEdgeAgg = 40 * 1024 ;// 10gb
+	private long BandWidthAggRoot = 40 * 1024 ;// 10gb
 	private double SwitchingDelayRoot = .00285; // ms
 	private double SwitchingDelayAgg  = .00245; // ms
 	private double SwitchingDelayEdge = .00157; // ms
+	
 	
 	public ManageDatacenter(String dcName,String policy){
 		datacenter = null;
