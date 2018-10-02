@@ -177,8 +177,8 @@ public class InfluxdbWorkload {
 	}
 
 
-	public  List<NetworkVm>  createVMs(int brokerId, List<AppCloudlet> appList){
-		List<NetworkVm> vmlist = new ArrayList<NetworkVm>();
+	public  Map<Integer,List<NetworkVm>>  createVMs(int brokerId, List<AppCloudlet> appList){
+		Map<Integer,List<NetworkVm>> vmlistReq = new HashMap<Integer,List<NetworkVm>>();
 		int mips = 100;
     	long size = 300; //image size (MB)
     	int ram = 0; //vm memory (MB)
@@ -187,22 +187,28 @@ public class InfluxdbWorkload {
     	String vmm = "Xen"; //VMM name  ---> no effect
     	
     	int totalVMs = 0;
-    	for(AppCloudlet app : appList){
-    		for(NetworkCloudlet cl : app.clist){
-    			totalVMs++;
+    	for(AppCloudlet app : appList){ 
+    		for(NetworkCloudlet cl : app.clist){ 
     			if(cl.memory > ram)
     				ram = Math.round(cl.memory);
     			if(cl.getNumberOfPes() > pesNumber)
     				pesNumber = cl.getNumberOfPes();
     		}
     	}
-    	ram = ram + 10;
-    	System.out.println("total cloudlet and VMs is :"+totalVMs);
-    	for(int i = 0; i<totalVMs ; i++){
-    		NetworkVm vm = new NetworkVm(NetworkConstants.currentVmId, brokerId, mips, pesNumber, ram, bw, size, vmm, new NetworkCloudletSpaceSharedScheduler());
-    		vmlist.add(vm);
-    		NetworkConstants.currentVmId++;
-		}
-		return vmlist;
+    		//ram = ram + 10;
+    	for(AppCloudlet app : appList){
+        	totalVMs = app.clist.size();
+    		List<NetworkVm> vmlist = new ArrayList<NetworkVm>();
+    		for(int i = 0; i<totalVMs ; i++){
+        		NetworkVm vm = new NetworkVm(NetworkConstants.currentVmId, brokerId, mips, pesNumber, ram, bw, size, vmm, new NetworkCloudletSpaceSharedScheduler());
+        		vmlist.add(vm);
+        		NetworkConstants.currentVmId++;
+    		}
+    		vmlistReq.put(app.appID, vmlist);
+    	//	System.out.println("forr app "+app.appID+" NO VMs : "+vmlist.size()+"last Id :"+(NetworkConstants.currentVmId-1));
+    	}
+    	
+    	
+		return vmlistReq;
 	}
 }

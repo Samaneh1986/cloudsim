@@ -244,7 +244,7 @@ public class NetworkDatacenter extends Datacenter {
 			
 			// time to transfer the files
 			double fileTransferTime = predictFileTransferTime(cl.getRequiredFiles());
-			System.out.println("process cloud let "+ cl.getCloudletId() +" on vmid, usrid:"+vmId+","+userId);
+			//System.out.println("process cloud let "+ cl.getCloudletId() +" on vmid, usrid:"+vmId+","+userId);
 			Host host = getVmAllocationPolicy().getHost(vmId, userId); 
 			err_hostid = host.getId();
 			err_vmid = vmId;

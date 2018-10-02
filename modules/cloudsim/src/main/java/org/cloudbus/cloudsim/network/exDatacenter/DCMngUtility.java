@@ -50,13 +50,13 @@ public class DCMngUtility {
 		    		int clId = app.clist.get(stg_vm[1]).getCloudletId();
 		    		double data = cur_cloudlet.get(stg_vm);
 		    		if(data > 0){
-		    			System.out.println("Ad  Stage "+stg_vm[0]+" for CL "+app.clist.get(i).getCloudletId()+" on VM"+app.clist.get(i).getVmId()
-		    					+" Sending "+data+" to CL "+clId+" on VM "+vmId);
+		    		//	System.out.println("Ad  Stage "+stg_vm[0]+" for CL "+app.clist.get(i).getCloudletId()+" on VM"+app.clist.get(i).getVmId()
+		    		//			+" Sending "+data+" to CL "+clId+" on VM "+vmId);
 		    			app.clist.get(i).stages.add(new TaskStage(NetworkConstants.WAIT_SEND, data,  0, stg_vm[0], 150, vmId,clId));
 		    		}else{
 		    			data = Math.abs(data);
-		    			System.out.println("Ad  Stage "+stg_vm[0]+" for CL "+app.clist.get(i).getCloudletId()+" on VM"+app.clist.get(i).getVmId()
-		    					+" receiving "+data+" from CL "+clId+" on VM "+vmId);
+		    		//	System.out.println("Ad  Stage "+stg_vm[0]+" for CL "+app.clist.get(i).getCloudletId()+" on VM"+app.clist.get(i).getVmId()
+		    		//			+" receiving "+data+" from CL "+clId+" on VM "+vmId);
 		    			app.clist.get(i).stages.add(new TaskStage(NetworkConstants.WAIT_RECV, data,  0, stg_vm[0], 150, vmId,clId));
 			    		}
 		    		//app.clist.get(i).numStage++;
@@ -256,18 +256,19 @@ public class DCMngUtility {
     	max_eg = 0.00;
     	double max_heg = 0.00;
     	AggregateSwitch heglb_agg_sw = null;
-    	double min_eg = 1.00;
+    	double min_eg = 9.00;
     	AggregateSwitch ineglb_agg_sw = null;
     	Map<Integer,Switch> aggSwitchList = DC.getAggSwitch();
     	for (Entry<Integer, Switch> es : aggSwitchList.entrySet()) {
 			AggregateSwitch aggSW;
 			aggSW = (AggregateSwitch) es.getValue();
+			//System.out.println("agg "+aggSW.id+", NS :"+aggSW.EG_NS+ ", req VMs:"+nu_req_VM);
 			if(aggSW.EG_NS >= nu_req_VM){
-				if (aggSW.EG_value =="HELGB" && aggSW.EG_SCORE > max_heg){
+				if (aggSW.EG_value =="HELGB" && aggSW.EG_SCORE >= max_heg){
 					max_heg = aggSW.EG_SCORE;
 					heglb_agg_sw = aggSW;
 				}
-				if (aggSW.EG_value !="INELGB" && aggSW.EG_SCORE > max_eg){
+				if (aggSW.EG_value !="INELGB" && aggSW.EG_SCORE >= max_eg){
 					max_eg = aggSW.EG_SCORE;
 					max_agg_sw = aggSW;
 				}
@@ -279,9 +280,11 @@ public class DCMngUtility {
     	}
     	if(max_heg > 0)
     		max_agg_sw = heglb_agg_sw;
-    	if(max_heg == 0 && max_eg == 0)
+    	if(max_heg == 0 && max_eg == 0 && min_eg != 9)
     		max_agg_sw = ineglb_agg_sw;
-		System.out.println("selected Switch name :" + max_agg_sw.getName() +"with class " + max_agg_sw.EG_value +" and score "+max_agg_sw.EG_SCORE);
+    	//if(max_agg_sw == null)
+    	//	System.out.println("no switch :"+max_heg+","+max_eg+","+min_eg+","+ineglb_agg_sw.getId());
+		//System.out.println("selected Switch name :" + max_agg_sw.getName() +"with class " + max_agg_sw.EG_value +" and score "+max_agg_sw.EG_SCORE);
     	return max_agg_sw.getId();
     } 
 

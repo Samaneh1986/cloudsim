@@ -900,6 +900,7 @@ public class Datacenter extends SimEntity {
 			for (int i = 0; i < list.size(); i++) {
 				Host host = list.get(i);
 				// inform VMs to update processing
+				//System.out.println("VM size For Host "+host.getId()+"is :"+host.getVmList().size());
 				double time = host.updateVmsProcessing(CloudSim.clock());
 				// what time do we expect that the next cloudlet will finish?
 				if (time < smallerTime) {
@@ -929,9 +930,9 @@ public class Datacenter extends SimEntity {
 		for (int i = 0; i < list.size(); i++) {
 			Host host = list.get(i);
 			for (Vm vm : host.getVmList()) {
-				while (vm.getCloudletScheduler().isFinishedCloudlets()) {
-					Cloudlet cl = vm.getCloudletScheduler().getNextFinishedCloudlet();
-					if (cl != null) {
+				while (vm.getCloudletScheduler().isFinishedCloudlets()) { 
+					Cloudlet cl = vm.getCloudletScheduler().getNextFinishedCloudlet(); 
+					if (cl != null) { 
 						sendNow(cl.getUserId(), CloudSimTags.CLOUDLET_RETURN, cl);
 					}
 				}

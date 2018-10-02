@@ -127,6 +127,8 @@ public class NetworkHost extends Host {
 	public boolean vmCreate(Vm vm) {
 		// TODO Auto-generated method stub 
 		boolean result = super.vmCreate(vm);
+		if(vm.getId() == 262)
+			System.out.println("VM 262 created result : "+result);
 		//System.out.println("VM creating ......");
 		double peUsedPrc = 0.0;
 		double freeCpu = 0;
@@ -277,7 +279,7 @@ public class NetworkHost extends Host {
                     NetworkConstants.totaldatatransfer += hs.pkt.data;
                     NetworkConstants.totaldatatransferTime += delay;
 
-                    System.out.println("global sending delay time : "+ delay);
+                    //System.out.println("global sending delay time : "+ delay);
                     CloudSim.send(getDatacenter().getId(), sw.getId(), delay, CloudSimTags.Network_Event_UP, hs);
                     // send to switch with delay
                     hostIx++;

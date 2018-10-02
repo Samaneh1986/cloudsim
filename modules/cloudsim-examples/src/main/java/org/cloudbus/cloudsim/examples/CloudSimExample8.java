@@ -10,6 +10,7 @@
 
 package org.cloudbus.cloudsim.examples;
 
+import java.io.File;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -27,12 +28,16 @@ import org.cloudbus.cloudsim.Pe;
 import org.cloudbus.cloudsim.Storage;
 import org.cloudbus.cloudsim.UtilizationModel;
 import org.cloudbus.cloudsim.UtilizationModelFull;
+import org.cloudbus.cloudsim.UtilizationModelNull;
+import org.cloudbus.cloudsim.UtilizationModelPlanetLabInMemory;
 import org.cloudbus.cloudsim.Vm;
 import org.cloudbus.cloudsim.VmAllocationPolicySimple;
 import org.cloudbus.cloudsim.VmSchedulerTimeShared;
 import org.cloudbus.cloudsim.core.CloudSim;
 import org.cloudbus.cloudsim.core.SimEntity;
 import org.cloudbus.cloudsim.core.SimEvent;
+import org.cloudbus.cloudsim.examples.power.Constants;
+import org.cloudbus.cloudsim.examples.power.planetlab.IqrMc;
 import org.cloudbus.cloudsim.provisioners.BwProvisionerSimple;
 import org.cloudbus.cloudsim.provisioners.PeProvisionerSimple;
 import org.cloudbus.cloudsim.provisioners.RamProvisionerSimple;
@@ -96,6 +101,52 @@ public class CloudSimExample8 {
 
 		return list;
 	}
+	
+	private static List<Cloudlet> createPlanetLabCloudlet(int userId){
+		// Creates a container to store Cloudlets
+				LinkedList<Cloudlet> list = new LinkedList<Cloudlet>();
+		
+		String inputFolderPath = CloudSimExample8.class.getClassLoader().getResource("workload/planetlab").getPath(); 
+		System.out.println(inputFolderPath);
+		String workload = "20110412"; // PlanetLab workload
+		String workloadPath = inputFolderPath + "/" + workload;
+		
+
+		long fileSize = 300;
+		long outputSize = 300;
+		double SIMULATION_LIMIT = 24 * 60 * 60;
+		int CLOUDLET_LENGTH	= 2500 * (int) SIMULATION_LIMIT;
+		int CLOUDLET_PES	= 1;
+		 double SCHEDULING_INTERVAL = 300;
+		
+		UtilizationModel utilizationModelNull = new UtilizationModelNull();
+
+		File inputFolder = new File(workloadPath);
+		File[] files = inputFolder.listFiles();
+
+		for (int i = 0; i < files.length; i++) {
+			Cloudlet cloudlet = null;
+			try {
+				cloudlet = new Cloudlet(
+						i,
+						CLOUDLET_LENGTH,
+						CLOUDLET_PES,
+						fileSize,
+						outputSize,
+						new UtilizationModelPlanetLabInMemory(
+								files[i].getAbsolutePath(),
+								SCHEDULING_INTERVAL), utilizationModelNull, utilizationModelNull);
+			} catch (Exception e) {
+				e.printStackTrace();
+				System.exit(0);
+			}
+			cloudlet.setUserId(userId);
+			cloudlet.setVmId(i);
+			list.add(cloudlet);
+		}
+		
+		return list;
+	}
 
 
 	////////////////////////// STATIC METHODS ///////////////////////
@@ -130,8 +181,11 @@ public class CloudSimExample8 {
 			int brokerId = broker.getId();
 
 			//Fourth step: Create VMs and Cloudlets and send them to broker
-			vmList = createVM(brokerId, 5, 0); //creating 5 vms
-			cloudletList = createCloudlet(brokerId, 10, 0); // creating 10 cloudlets
+
+			cloudletList = createPlanetLabCloudlet(brokerId);
+			vmList = createVM(brokerId, cloudletList.size(), 0);
+			//vmList = createVM(brokerId, 5, 0); //creating 5 vms
+			//cloudletList = createCloudlet(brokerId, 10, 0); // creating 10 cloudlets
 
 			broker.submitVmList(vmList);
 			broker.submitCloudletList(cloudletList);

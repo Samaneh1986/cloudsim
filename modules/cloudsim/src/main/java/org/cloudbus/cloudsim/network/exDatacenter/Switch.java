@@ -185,10 +185,6 @@ public class Switch extends SimEntity {
 	@Override
 	public void processEvent(SimEvent ev) {
 		// Log.printLine(CloudSim.clock()+"[Broker]: event received:"+ev.getTag()); 
-		if((CloudSim.clock() - passTime )>10 ){
-			DCMngUtility.dcPerformance.updateSwitchParams(this);
-			passTime = CloudSim.clock();
-		}
 		
 		switch (ev.getTag()) {
 		// Resource characteristics request
@@ -215,6 +211,11 @@ public class Switch extends SimEntity {
 			default:
 				processOtherEvent(ev);
 				break;
+		}
+		if((CloudSim.clock() - passTime )>10 ){
+		//	System.out.println("this is ranning ..."+this.pktlist.size()+","+this.uplinkswitchpktlist.size());
+			DCMngUtility.dcPerformance.updateSwitchParams(this);
+			passTime = CloudSim.clock();
 		}
 	}
 

@@ -105,7 +105,7 @@ public class NetworkCloudletSpaceSharedScheduler extends CloudletScheduler {
 			if ((cl.currStagenum != -1)) {
 				if (cl.currStagenum == NetworkConstants.FINISH) {
 
-				System.out.println("Stage for cl "+cl.getCloudletId()+"is FINISH 1 ");
+				//System.out.println("Stage for cl "+cl.getCloudletId()+"is FINISH 1 ");
 					break;
 				}
 				TaskStage st = cl.stages.get(cl.currStagenum);
@@ -178,7 +178,7 @@ public class NetworkCloudletSpaceSharedScheduler extends CloudletScheduler {
 		for (ResCloudlet rcl : getCloudletExecList()) {
 			// rounding issue...
 			if (((NetworkCloudlet) (rcl.getCloudlet())).currStagenum == NetworkConstants.FINISH) {
-				System.out.println("Stage for cl "+rcl.getCloudletId()+"is FINISH 2 ");
+				//System.out.println("Stage for cl "+rcl.getCloudletId()+"is FINISH 2 ");
 				// stage is changed and packet to send
 				((NetworkCloudlet) (rcl.getCloudlet())).finishtime = CloudSim.clock();
 				toRemove.add(rcl);

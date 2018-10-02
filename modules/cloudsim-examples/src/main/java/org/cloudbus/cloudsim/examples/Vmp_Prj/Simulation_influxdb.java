@@ -6,6 +6,7 @@ import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
+import java.util.Map;
 
 import org.cloudbus.cloudsim.Cloudlet;
 import org.cloudbus.cloudsim.DatacenterBroker;
@@ -23,7 +24,7 @@ import org.cloudbus.cloudsim.network.exDatacenter.NetworkHost;
 import org.cloudbus.cloudsim.network.exDatacenter.NetworkVm;
 
 public class Simulation_influxdb {
-	private static List<NetworkVm> vmlist; 
+	//private static Map<Integer, List<NetworkVm>> vmlistReq; 
 	private static List<AppCloudlet> appList;
 	private static ManageDatacenter mDc ;
 	private static NetDatacenterBroker broker1;
@@ -78,9 +79,12 @@ public class Simulation_influxdb {
 			String workingDirectory = System.getProperty("user.dir");
 			InfluxdbWorkload ds = new InfluxdbWorkload(workingDirectory+"/src/main/java/org/cloudbus/cloudsim/examples/Vmp_Prj/jsonDS/dataSet1.json");
 			appList = ds.createWorkload(broker1Id);
-			vmlist = ds.createVMs(broker1Id,appList);
+			Map<Integer, List<NetworkVm>> vmlistReq = ds.createVMs(broker1Id,appList);
 			// assign VMs to broker related variable
-			broker1.CreateCustomVMs(datacenter001.getId(),vmlist);
+			for(int appId : vmlistReq.keySet()) {
+				List<NetworkVm> vmlist = vmlistReq.get(appId);
+				broker1.CreateCustomVMs(datacenter001.getId(),vmlist);
+			}
 			// create initial cloudletApp 
 			broker1.getAppCloudletList().addAll(appList); 
 			
@@ -110,9 +114,11 @@ public class Simulation_influxdb {
 				    Log.printLine(CloudSim.clock() + "<<<<<--- New Workload Added --->>>>>");
 				    InfluxdbWorkload ds2 = new InfluxdbWorkload(workingDirectory+"/src/main/java/org/cloudbus/cloudsim/examples/Vmp_Prj/jsonDS/dataSet3.json");
 				    List<AppCloudlet>  applist2 = ds2.createWorkload(broker2Id);
-					List<NetworkVm> vmlist2 = ds2.createVMs(broker2Id,applist2);
-
-					broker2.CreateCustomVMs(datacenter001.getId(),vmlist2);
+				    Map<Integer, List<NetworkVm>> vmlistReq2 = ds2.createVMs(broker2Id,applist2);
+				    for(int appId : vmlistReq2.keySet()) {
+				    	List<NetworkVm> vmlist2 = vmlistReq2.get(appId);
+						broker2.CreateCustomVMs(datacenter001.getId(),vmlist2);
+				    }
 					broker2.getAppCloudletList().addAll(applist2);
 					broker2.schedule(broker2Id, 0, CloudSimTags.RESOURCE_CHARACTERISTICS_REQUEST);
 					Log.printLine(CloudSim.clock() + "<<<<<--- user 1 workload sent --->>>>>");
@@ -147,8 +153,11 @@ public class Simulation_influxdb {
 							    Log.printLine(CloudSim.clock() +"<<<<<--- New Workload Added --->>>>>");
 							    InfluxdbWorkload ds3 = new InfluxdbWorkload(workingDirectory+"/src/main/java/org/cloudbus/cloudsim/examples/Vmp_Prj/jsonDS/dataSet2.json");
 							    List<AppCloudlet>  applist3 = ds3.createWorkload(broker3Id);
-								List<NetworkVm> vmlist3 = ds3.createVMs(broker3Id,applist3);
-								broker3.CreateCustomVMs(datacenter001.getId(),vmlist3);
+							    Map<Integer, List<NetworkVm>> vmlistReq3 = ds3.createVMs(broker3Id,applist3);
+							    for(int appId : vmlistReq3.keySet()) {
+							    	List<NetworkVm> vmlist3 = vmlistReq3.get(appId);
+									broker3.CreateCustomVMs(datacenter001.getId(),vmlist3);
+							    }
 								broker3.getAppCloudletList().addAll(applist3);
 								broker3.schedule(broker3Id, 0, CloudSimTags.RESOURCE_CHARACTERISTICS_REQUEST);
 								Log.printLine(CloudSim.clock() + "<<<<<--- user 2 workload sent --->>>>>");
@@ -183,9 +192,12 @@ public class Simulation_influxdb {
 										    Log.printLine(CloudSim.clock() +"<<<<<--- New Workload Added --->>>>>");
 										    InfluxdbWorkload ds4 = new InfluxdbWorkload(workingDirectory+"/src/main/java/org/cloudbus/cloudsim/examples/Vmp_Prj/jsonDS/dataSet1.json");
 										    List<AppCloudlet>  applist4 = ds4.createWorkload(broker4Id);
-											List<NetworkVm> vmlist4 = ds4.createVMs(broker4Id,applist4);
+										    Map<Integer, List<NetworkVm>> vmlistReq4 = ds4.createVMs(broker4Id,applist4);
+										    for(int appId : vmlistReq4.keySet()) {
+										    	List<NetworkVm> vmlist4 = vmlistReq4.get(appId);
+												broker4.CreateCustomVMs(datacenter001.getId(),vmlist4);
+											}
 
-										    broker4.CreateCustomVMs(datacenter001.getId(),vmlist4);
 											broker4.getAppCloudletList().addAll(applist4);
 											broker4.schedule(broker4Id, 0, CloudSimTags.RESOURCE_CHARACTERISTICS_REQUEST);
 											Log.printLine(CloudSim.clock() + "<<<<<--- user 4 workload sent --->>>>>");
@@ -219,9 +231,11 @@ public class Simulation_influxdb {
 										    Log.printLine(CloudSim.clock() +"<<<<<--- New Workload Added --->>>>>");
 										    InfluxdbWorkload ds5 = new InfluxdbWorkload(workingDirectory+"/src/main/java/org/cloudbus/cloudsim/examples/Vmp_Prj/jsonDS/dataSet3.json");
 										    List<AppCloudlet>  applist5 = ds5.createWorkload(broker5Id);
-											List<NetworkVm> vmlist5 = ds5.createVMs(broker5Id,applist5);
-
-										    broker5.CreateCustomVMs(datacenter001.getId(),vmlist5);
+										    Map<Integer, List<NetworkVm>> vmlistReq5 = ds5.createVMs(broker5Id,applist5);
+										    for(int appId : vmlistReq5.keySet()) {
+										    	List<NetworkVm> vmlist5 = vmlistReq5.get(appId);
+										    	broker5.CreateCustomVMs(datacenter001.getId(),vmlist5);
+										    }
 											broker5.getAppCloudletList().addAll(applist5);
 											broker5.schedule(broker5Id, 0, CloudSimTags.RESOURCE_CHARACTERISTICS_REQUEST);
 											Log.printLine(CloudSim.clock() + "<<<<<--- user 5 workload sent --->>>>>");
@@ -255,9 +269,11 @@ public class Simulation_influxdb {
 										    Log.printLine(CloudSim.clock() +"<<<<<--- New Workload Added --->>>>>");
 										    InfluxdbWorkload ds6 = new InfluxdbWorkload(workingDirectory+"/src/main/java/org/cloudbus/cloudsim/examples/Vmp_Prj/jsonDS/dataSet2.json");
 										    List<AppCloudlet>  applist6 = ds6.createWorkload(broker6Id);
-											List<NetworkVm> vmlist6 = ds6.createVMs(broker6Id,applist6);
-
-										    broker6.CreateCustomVMs(datacenter001.getId(),vmlist6);
+										    Map<Integer, List<NetworkVm>> vmlistReq6 = ds6.createVMs(broker6Id,applist6);
+										    for(int appId : vmlistReq6.keySet()) {
+										    	List<NetworkVm> vmlist6 = vmlistReq6.get(appId);
+										    	broker6.CreateCustomVMs(datacenter001.getId(),vmlist6);
+										    }
 											broker6.getAppCloudletList().addAll(applist6);
 											broker6.schedule(broker6Id, 0, CloudSimTags.RESOURCE_CHARACTERISTICS_REQUEST);
 											Log.printLine(CloudSim.clock() + "<<<<<--- user 5 workload sent --->>>>>");
@@ -281,7 +297,7 @@ public class Simulation_influxdb {
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
-				
+		
 		new Thread(user4).start();
 		try {
 			Thread.sleep(100);

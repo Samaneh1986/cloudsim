@@ -33,8 +33,8 @@ public class ManageDatacenter {
 	// Network structure variables
 	// !!! all the Bandwidth are in MB, because of overflow!!!
 	private int EdgeSwitchPort = 40;
-	private int AggSwitchPort = 10;
-	private int RootSwitchPort = 1;
+	private int AggSwitchPort = 2;
+	private int RootSwitchPort = 4;
 	private long BandWidthEdgeHost = 10 * 1024; // 1gb , BW number is in MB
 	private long BandWidthEdgeAgg = 40 * 1024 ;// 10gb
 	private long BandWidthAggRoot = 40 * 1024 ;// 10gb
@@ -51,7 +51,7 @@ public class ManageDatacenter {
 	}
 	public NetworkDatacenter createDatacenter() {
 		List<NetworkHost> hostList = new ArrayList<NetworkHost>();  
-		int mips = 100 ; 
+		int mips = 500 ; 
 		int ram = 8192; // host memory (MB) = 8GB
 		long storage = 1000000; // host storage
 		long bw = BandWidthEdgeHost;
@@ -95,12 +95,13 @@ public class ManageDatacenter {
 			peList.add(new Pe(31, new PeProvisionerSimple(mips)));  
 			
 			hostList.add( new NetworkHost(
-					i,
+					NetworkConstants.currentHostId,
 					new RamProvisionerSimple(ram),
 					new BwProvisionerSimple(bw),
 					storage,
 					peList,
-					new VmSchedulerTimeShared(peList)));  
+					new VmSchedulerTimeShared(peList))); 
+			NetworkConstants.currentHostId++;
 		}
 		ram = 16384; // host memory (MB) = 16GB
 		for (int i = 0; i <hig_ram_hosts; i++) { 
@@ -123,12 +124,13 @@ public class ManageDatacenter {
 			peList.add(new Pe(15, new PeProvisionerSimple(mips)));    
 			
 			hostList.add( new NetworkHost(
-					(i+high_cpu_hosts),
+					NetworkConstants.currentHostId,
 					new RamProvisionerSimple(ram),
 					new BwProvisionerSimple(bw),
 					storage,
 					peList,
 					new VmSchedulerTimeShared(peList))); // This is our machine
+			NetworkConstants.currentHostId++;
 		}
 		ram = 8192; // host memory (MB) = 8GB
 		for (int i = 0; i <mid_cpu_ram_hosts; i++) { 
@@ -143,12 +145,13 @@ public class ManageDatacenter {
 			peList.add(new Pe(7, new PeProvisionerSimple(mips)));   
 			
 			hostList.add( new NetworkHost(
-					(i+high_cpu_hosts+hig_ram_hosts),
+					NetworkConstants.currentHostId,
 					new RamProvisionerSimple(ram),
 					new BwProvisionerSimple(bw),
 					storage,
 					peList,
 					new VmSchedulerTimeShared(peList))); // This is our machine
+			NetworkConstants.currentHostId++;
 		}
 
 		

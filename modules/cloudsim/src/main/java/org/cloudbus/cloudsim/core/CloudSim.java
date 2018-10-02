@@ -564,6 +564,7 @@ public class CloudSim {
 	 */
 	public static void runStop() {
 		printMessage("Simulation completed.");
+		
 	}
 
 	/**

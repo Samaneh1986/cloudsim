@@ -6,6 +6,7 @@ import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
+import java.util.Map;
 
 import org.cloudbus.cloudsim.Cloudlet;
 import org.cloudbus.cloudsim.DatacenterBroker;
@@ -15,6 +16,7 @@ import org.cloudbus.cloudsim.core.CloudSim;
 import org.cloudbus.cloudsim.core.CloudSimTags;
 import org.cloudbus.cloudsim.network.exDatacenter.AppCloudlet;
 import org.cloudbus.cloudsim.network.exDatacenter.DCMngUtility;
+import org.cloudbus.cloudsim.network.exDatacenter.DCPerformance;
 import org.cloudbus.cloudsim.network.exDatacenter.NetDatacenterBroker;
 import org.cloudbus.cloudsim.network.exDatacenter.NetworkConstants;
 import org.cloudbus.cloudsim.network.exDatacenter.NetworkDatacenter;
@@ -22,7 +24,7 @@ import org.cloudbus.cloudsim.network.exDatacenter.NetworkHost;
 import org.cloudbus.cloudsim.network.exDatacenter.NetworkVm;
 
 public class Simulation_test {
-	private static List<NetworkVm> vmlist; 
+	private static Map<Integer, List<NetworkVm>> vmlistReq; 
 	private static List<AppCloudlet> appList;
 	private static ManageDatacenter mDc ;
 	private static NetDatacenterBroker broker;
@@ -40,11 +42,12 @@ public class Simulation_test {
 			calendar = Calendar.getInstance();
 			boolean trace_flag = false; // mean trace events 
 			CloudSim.init(num_user, calendar, trace_flag); 
+			DCMngUtility.dcPerformance = new  DCPerformance();
 			// Create data center
 			//mDc = new ManageDatacenter("Datacenter_001","RANDOM");
 			//mDc = new ManageDatacenter("Datacenter_001","TDB");
-			//mDc = new ManageDatacenter("Datacenter_001","GREEDY");
-			mDc = new ManageDatacenter("Datacenter_001","BFT");
+			mDc = new ManageDatacenter("Datacenter_001","GREEDY");
+			//mDc = new ManageDatacenter("Datacenter_001","BFT");
 			NetworkDatacenter datacenter001 = mDc.createDatacenter();
 			// Create Broker
 			NetDatacenterBroker.setLinkDC(datacenter001);
@@ -52,10 +55,13 @@ public class Simulation_test {
 			brokerId = broker.getId();
 			//
 			String workingDirectory = System.getProperty("user.dir");
-			InfluxdbWorkload ds = new InfluxdbWorkload(workingDirectory+"/src/main/java/org/cloudbus/cloudsim/examples/Vmp_Prj/jsonDS/dataSet1.json");
+			InfluxdbWorkload ds = new InfluxdbWorkload(workingDirectory+"/src/main/java/org/cloudbus/cloudsim/examples/Vmp_Prj/jsonDS/dataSet3.json");
 			appList = ds.createWorkload(brokerId);
-			vmlist = ds.createVMs(brokerId,appList);
-			broker.CreateCustomVMs(datacenter001.getId(),vmlist);
+			vmlistReq = ds.createVMs(brokerId,appList);
+			for(int appId : vmlistReq.keySet()) {
+				List<NetworkVm> vmlist = vmlistReq.get(appId);
+				broker.CreateCustomVMs(datacenter001.getId(),vmlist);
+			}
 			broker.getAppCloudletList().addAll(appList); 
 			
 			

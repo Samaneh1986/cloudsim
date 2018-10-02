@@ -101,7 +101,9 @@ public class VmAllocationPolicyTDB extends VmAllocationPolicy {
 		List<Map<String, Object>> result = new ArrayList<Map<String, Object>>();
 		List<NetworkVm> reqVMs = (List<NetworkVm>) vmList;
 		
+		System.out.println("request for next "+vmList.size()+" VMs from Id "+vmList.get(0).getId());
 		Switch root_sw = phaseOne(reqVMs);
+		System.out.println("selected switch "+root_sw.getName());
 		create_distance_matrix(root_sw, reqVMs);
 		boolean rslt = phaseTwo(reqVMs);
 		
@@ -113,7 +115,7 @@ public class VmAllocationPolicyTDB extends VmAllocationPolicy {
 		else
 			finalCnd.put("ER","FAILED");
 		result.add(finalCnd);
-		
+		this.host_list.clear();
 		return result;
 	}
 
@@ -226,8 +228,8 @@ public class VmAllocationPolicyTDB extends VmAllocationPolicy {
 			//distance = 4+(4 *( ( host1.usedbandwidthSend + host1.usedbandwidthRcv + host2.usedbandwidthSend+ host2.usedbandwidthRcv) +
 			//		(host1.sw.uplinkSwSend + host1.sw.uplinkSwRcv + host2.sw.uplinkSwSend+ host2.sw.uplinkSwRcv )));
 			distance = 4*((host1.packetTosendGlobal.size()/(host1.packetTosendGlobal.size()+1))+
-					(host1.sw.pktlist.size()/((host1.sw.pktlist.size()+1)/fraction))+
-					(host2.sw.pktlist.size()/((host2.sw.pktlist.size()+1)/fraction))+
+					(host1.sw.uplinkswitchpktlist.size()/((host1.sw.uplinkswitchpktlist.size()+1)/fraction))+
+					(host2.sw.uplinkswitchpktlist.size()/((host2.sw.uplinkswitchpktlist.size()+1)/fraction))+
 					(host2.packetTosendGlobal.size()/(host2.packetTosendGlobal.size()+1)));
 		}
 	    return distance;
@@ -273,10 +275,12 @@ public class VmAllocationPolicyTDB extends VmAllocationPolicy {
 		// assign a suitable VM to host 
 		host = host_list.get(slctHostIx);
 		result = host.vmCreate(firstVm);
+		if(!result)
+			System.out.println("The following placement failed");
 		remaine_vm.remove(firstVmId);
 		host_selected[slctHostIx] = 1;
 		getVmTable().put(firstVm.getUid(), host);  
-	    System.out.println("first placement : Vm Id , Host Id :"+firstVm.getId()+","+host.getId());
+	    System.out.println("first placement : Vm Id , Host Id , UId :"+firstVm.getId()+","+host.getId()+","+firstVm.getUserId());
 	    
 		/*for(NetworkVm vm : remaine_vm){
 			host = host_list.get(slctHostIx);
@@ -295,13 +299,17 @@ public class VmAllocationPolicyTDB extends VmAllocationPolicy {
 		minPe = Integer.MAX_VALUE;
 		slctHostIx = -1;
 		for(NetworkVm vm : remaine_vm){
-			for(int i =0; i<host_list.size(); i++){
+			for(int i =0; i<host_list.size(); i++){ 
+
 				if(host_selected[i] == 0){
+			
 					if(host_list.get(i).isSuitableForVm(vm)){
 						tmp = 0;
 						for(int j =0; j<host_list.size(); j++){
 							tmp = tmp + (distance_matrix[i][j] * host_selected[j]);
 						}
+						if(vm.getId() == 282) 
+							System.out.println("host is suit and traffic : "+tmp);
 						if(tmp < minTrafficCost){
 							minTrafficCost = tmp;
 							slctHostIx = i;
@@ -319,14 +327,17 @@ public class VmAllocationPolicyTDB extends VmAllocationPolicy {
 			if(slctHostIx == -1){
 				result = false;
 				for(NetworkVm dvm : vmList){
-					if(dvm.getHost() != null)
-						dvm.getHost().vmDestroy(dvm);
+					if(dvm.getHost() != null){
+						System.out.println("destroying VMs ...... because of VM "+vm.getId());
+						dvm.getHost().vmDestroy(dvm);}
 				}
 				return result;
 			}
 			host_selected[slctHostIx] = 1;
 			host = host_list.get(slctHostIx);
 			result = host.vmCreate(vm);
+			if(!result)
+				System.out.println("The following placement failed");
 			getVmTable().put(vm.getUid(), host);
 		    //System.out.println("host with min cost of :"+minTrafficCost);
 		    System.out.println("The placement : Vm Id , Host Id,index :"+vm.getId()+","+host.getId()+","+slctHostIx);

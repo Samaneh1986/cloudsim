@@ -25,6 +25,7 @@ public class NetworkConstants {
 	public static int currentCloudletId = 0;
 	public static int currentAppId = 0;
 	public static int currentVmId = 0;
+	public static int currentHostId = 0;
 
 	/** 
          * Types of {@link TaskStage}

@@ -12,6 +12,7 @@ import java.util.List;
 
 import org.cloudbus.cloudsim.core.CloudSim;
 import org.cloudbus.cloudsim.lists.PeList;
+import org.cloudbus.cloudsim.network.exDatacenter.DCMngUtility;
 import org.cloudbus.cloudsim.provisioners.BwProvisioner;
 import org.cloudbus.cloudsim.provisioners.RamProvisioner;
 
@@ -232,6 +233,7 @@ public class Host {
 		}
 
 		if (!getVmScheduler().allocatePesForVm(vm, vm.getCurrentRequestedMips())) {
+			System.out.println("mips:"+vm.getCurrentRequestedMips());
 			Log.printConcatLine("[VmScheduler.vmCreate] Allocation of VM #", vm.getId(), " to Host #", getId(),
 					" failed by MIPS");
 			getRamProvisioner().deallocateRamForVm(vm);
@@ -240,8 +242,13 @@ public class Host {
 		}
 
 		setStorage(getStorage() - vm.getSize());
+		if(vm.getId() == 262)
+			System.out.println("size brfore adding on host "+this.getId()+" is "+getVmList().size());
 		getVmList().add(vm);
 		vm.setHost(this);
+		if(vm.getId() == 262)
+			System.out.println("size after adding on host "+this.getId()+" is "+getVmList().size());
+		//	DCMngUtility.resultFile.println("VM ID "+vm.getId()+" created on HOST "+this.getId());
 		return true;
 	}
 
@@ -254,6 +261,8 @@ public class Host {
 	 */
 	public void vmDestroy(Vm vm) {
 		if (vm != null) {
+			if(vm.getId() == 262)
+				System.out.println("VM 262 removed from host "+this.getId());
 			vmDeallocate(vm);
 			getVmList().remove(vm);
 			vm.setHost(null);
@@ -307,6 +316,8 @@ public class Host {
 	 */
 	public Vm getVm(int vmId, int userId) {
 		for (Vm vm : getVmList()) {
+			if(vmId == 262)
+				System.out.println("available VMs on host "+this.getId()+" are :"+vm.getId()+","+vm.getUserId() );
 			if (vm.getId() == vmId && vm.getUserId() == userId) {
 				return vm;
 			}
