@@ -335,14 +335,14 @@ public class Simulation_influxdb {
 					+ NetDatacenterBroker.cachedcloudlet + " Data transfered "
 					+ NetworkConstants.totaldatatransfer + " during Time "+NetworkConstants.totaldatatransferTime);
 			System.out.println("Inter Racks Data transfered amount is "+NetworkConstants.interRackDataTransfer);
-			System.out.println(" ** HOSTS INFORMATION ** ");
+		//	System.out.println(" ** HOSTS INFORMATION ** ");
 			int totUsdHst = 0;
 			int allHst = 0;
 			double usagemean = 0.0;
 			for(Host hs :datacenter001.getHostList()){
 				 NetworkHost nvh =  (NetworkHost) hs;
 				 if(nvh.getUtilizedCpu() != 0){
-					 System.out.println("Host Id"+nvh.getId()+" -> used cpu prc:" +(1-nvh.getUnusedCpu())+" , mean usage: "+nvh.getUtilizedCpu());
+				//	 System.out.println("Host Id"+nvh.getId()+" -> used cpu prc:" +(1-nvh.getUnusedCpu())+" , mean usage: "+nvh.getUtilizedCpu());
 					 totUsdHst++;
 					 usagemean = usagemean + (1- nvh.getUnusedCpu());
 				 } 
@@ -351,6 +351,7 @@ public class Simulation_influxdb {
 			usagemean = usagemean / totUsdHst;
 			System.out.println("Total "+totUsdHst+" hosts from "+allHst+" availbles hosts is used with mean prodactivity "+usagemean);
 			DCMngUtility.dcPerformance.switchReport();
+			DCMngUtility.dcPerformance.hostReport();
 			
 			Log.printLine("Project simulation finished!");
 		}
@@ -363,9 +364,10 @@ public class Simulation_influxdb {
 	
 
 	private static void printCloudletList(List<Cloudlet> list) throws IOException {
-		String jobFileName = "Cloudlet_info__"+calendar.getTime().toString();
-		PrintWriter jobFile =  new PrintWriter(jobFileName);
+		//String jobFileName = "Cloudlet_info__"+calendar.getTime().toString();
+		//PrintWriter jobFile =  new PrintWriter(jobFileName);
 		int size = list.size();
+		double mean_time = 0.0;
 		Cloudlet cloudlet;
 		String indent = "    ";
 		Log.printLine();
@@ -380,34 +382,36 @@ public class Simulation_influxdb {
 		for (int i = 0; i < size; i++) {
 			cloudlet = list.get(i);
 			Log.print(indent + cloudlet.getCloudletId() + indent + indent);
-			jobFile.print(indent + cloudlet.getCloudletId() + indent + indent);
-
+			//jobFile.print(indent + cloudlet.getCloudletId() + indent + indent);
+			mean_time = mean_time+ cloudlet.getActualCPUTime();
 			if (cloudlet.getStatus() == Cloudlet.SUCCESS) {
 				Log.print("SUCCESS");
-				jobFile.print("SUCCESS");
+				//jobFile.print("SUCCESS");
 				Log.printLine(indent + indent + cloudlet.getResourceId() + indent + indent + indent
 						+ cloudlet.getVmId() + indent + indent + dft.format(cloudlet.getActualCPUTime())
 						+ indent + indent + dft.format(cloudlet.getExecStartTime()) + indent + indent
 						+ dft.format(cloudlet.getFinishTime()));
-				jobFile.println(indent + indent + cloudlet.getResourceId() + indent + indent + indent
+				/*jobFile.println(indent + indent + cloudlet.getResourceId() + indent + indent + indent
 						+ cloudlet.getVmId() + indent + indent + dft.format(cloudlet.getActualCPUTime())
 						+ indent + indent + dft.format(cloudlet.getExecStartTime()) + indent + indent
-						+ dft.format(cloudlet.getFinishTime()));
+						+ dft.format(cloudlet.getFinishTime()));*/
 			}
 			else{
 				Log.print("FAILED");
-				jobFile.print("FAILED");
+			//	jobFile.print("FAILED");
 				Log.printLine(indent + indent + cloudlet.getResourceId() + indent + indent + indent
 						+ cloudlet.getVmId() + indent + indent + dft.format(cloudlet.getActualCPUTime())
 						+ indent + indent + dft.format(cloudlet.getExecStartTime()) + indent + indent
 						+ dft.format(cloudlet.getFinishTime()));
-				jobFile.println(indent + indent + cloudlet.getResourceId() + indent + indent + indent
+			/*	jobFile.println(indent + indent + cloudlet.getResourceId() + indent + indent + indent
 						+ cloudlet.getVmId() + indent + indent + dft.format(cloudlet.getActualCPUTime())
 						+ indent + indent + dft.format(cloudlet.getExecStartTime()) + indent + indent
-						+ dft.format(cloudlet.getFinishTime()));
+						+ dft.format(cloudlet.getFinishTime()));*/
 			}
 		}
-		jobFile.close();
+		mean_time = mean_time / size;
+		System.out.println("mean cpu execute time : "+mean_time);
+		//jobFile.close();
 
 	}
 

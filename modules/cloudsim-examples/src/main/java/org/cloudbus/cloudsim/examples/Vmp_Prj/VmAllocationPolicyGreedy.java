@@ -106,6 +106,7 @@ public class VmAllocationPolicyGreedy extends VmAllocationPolicy {
 		System.out.println("First placement: VM Id , Host Id: "+vmList.get(0).getId()+" , "+selHostId);
 		EdgeSwitch esw = (EdgeSwitch)host.sw;
 		AggregateSwitch asw = null;
+		System.out.println("VMs requested : " + vmList.size()+ " available no in rack "+esw.getName()+" is "+esw.hostlist.size());
 		if(vmList.size() > esw.hostlist.size()){
 			asw = (AggregateSwitch) esw.uplinkswitches.get(0);
 			create_distance_matrix(asw);
@@ -216,7 +217,7 @@ public class VmAllocationPolicyGreedy extends VmAllocationPolicy {
 	} 
 private void create_distance_matrix(Switch rsw){ 
 		
- 
+		host_list.clear();
     	if (rsw.level < 2){
 		for(Switch sw : rsw.downlinkswitches){
 			for(NetworkHost host : sw.hostlist.values()){
@@ -227,6 +228,7 @@ private void create_distance_matrix(Switch rsw){
     	else{
     		for(NetworkHost host : rsw.hostlist.values()){ 
 					host_list.add(host);
+			//		System.out.print("candidate hosts: "+host.getId()+", ");
 			}
     	}
 		// fill distance_matrix

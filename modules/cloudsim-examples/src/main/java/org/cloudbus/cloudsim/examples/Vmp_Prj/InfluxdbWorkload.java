@@ -201,6 +201,7 @@ public class InfluxdbWorkload {
     		List<NetworkVm> vmlist = new ArrayList<NetworkVm>();
     		for(int i = 0; i<totalVMs ; i++){
         		NetworkVm vm = new NetworkVm(NetworkConstants.currentVmId, brokerId, mips, pesNumber, ram, bw, size, vmm, new NetworkCloudletSpaceSharedScheduler());
+        		app.clist.get(i).setVmId(NetworkConstants.currentVmId);
         		vmlist.add(vm);
         		NetworkConstants.currentVmId++;
     		}

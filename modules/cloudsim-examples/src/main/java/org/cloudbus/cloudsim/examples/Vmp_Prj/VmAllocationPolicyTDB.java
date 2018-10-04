@@ -224,12 +224,29 @@ public class VmAllocationPolicyTDB extends VmAllocationPolicy {
 					(host2.packetTosendGlobal.size()/(host2.packetTosendGlobal.size()+1)));
 		}
 		else{ // hosts are connected to the same aggregation switch
+			String edg1Name;
+			String edg2Name;
+			Switch aggSw = null;
+			for(Switch ns1  : host1.sw.uplinkswitches){ 
+				edg1Name = ns1.getName();
+				for(Switch ns2  : host2.sw.uplinkswitches){ 
+					edg2Name = ns2.getName();
+					if(edg1Name.equalsIgnoreCase(edg2Name))
+						aggSw = ns2;
+				}
+			}
 			double fraction = host1.sw.uplinkbandwidth / host1.bandwidth;
+			double packet_in_src_link = 0.0;
+			double packet_in_dst_link = 0.0;
+			if(aggSw.downlinkswitchpktlist.get(host1.sw.getId()) != null)
+				packet_in_src_link= aggSw.downlinkswitchpktlist.get(host1.sw.getId()).size();
+			if(aggSw.downlinkswitchpktlist.get(host2.sw.getId()) != null)
+				packet_in_dst_link= aggSw.downlinkswitchpktlist.get(host2.sw.getId()).size();
 			//distance = 4+(4 *( ( host1.usedbandwidthSend + host1.usedbandwidthRcv + host2.usedbandwidthSend+ host2.usedbandwidthRcv) +
 			//		(host1.sw.uplinkSwSend + host1.sw.uplinkSwRcv + host2.sw.uplinkSwSend+ host2.sw.uplinkSwRcv )));
 			distance = 4*((host1.packetTosendGlobal.size()/(host1.packetTosendGlobal.size()+1))+
-					(host1.sw.uplinkswitchpktlist.size()/((host1.sw.uplinkswitchpktlist.size()+1)/fraction))+
-					(host2.sw.uplinkswitchpktlist.size()/((host2.sw.uplinkswitchpktlist.size()+1)/fraction))+
+					(packet_in_src_link/((packet_in_src_link+1)/fraction))+
+					(packet_in_dst_link/((packet_in_dst_link+1)/fraction))+
 					(host2.packetTosendGlobal.size()/(host2.packetTosendGlobal.size()+1)));
 		}
 	    return distance;

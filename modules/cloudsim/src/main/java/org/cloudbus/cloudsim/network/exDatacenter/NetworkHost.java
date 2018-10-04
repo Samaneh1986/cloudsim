@@ -40,9 +40,10 @@ import org.cloudbus.cloudsim.provisioners.RamProvisioner;
  * @since CloudSim Toolkit 3.0
  */
 public class NetworkHost extends Host {
+
+	private double passTime = 0;
 	
 	public List<NetworkPacket> packetTosendLocal;
-
 	public List<NetworkPacket> packetTosendGlobal;
 	public List<NetworkHost> hostOfsendGlobal;
 
@@ -117,8 +118,10 @@ public class NetworkHost extends Host {
 		}
 		// send the packets to other hosts/VMs
 		sendpackets();
-		
-
+		if((CloudSim.clock() - passTime )>10 ){
+			DCMngUtility.dcPerformance.updateHostParams(this,0);
+			passTime = CloudSim.clock();
+		}
 		return smallerTime;
 
 	}
@@ -159,6 +162,8 @@ public class NetworkHost extends Host {
 			unusedCpu = (unusedCpu+(freeCpu/(freeCpu+usedCpu)))/2;
 			//System.out.println("Next VM : " + utilizedCpu+","+unusedCpu);
 		}
+		
+		DCMngUtility.dcPerformance.updateHostParams(this,1);
 		
 		return result;
 	}
@@ -275,7 +280,7 @@ public class NetworkHost extends Host {
                     double delay = 0; // (1000 * hs.pkt.data) / avband;
                     
                     //System.out.println("size :"+hs.pkt.data+", from "+this.getId()+" to "+hostOfsendGlobal.get(hostIx).getId()+" with VM size "+hostOfsendGlobal.get(hostIx).getVmList().size());
-                    delay = DCMngUtility.computeDelay(this,hostOfsendGlobal.get(hostIx),hs.pkt.data);
+                    delay = DCMngUtility.computeDelay(this,hostOfsendGlobal.get(hostIx),hs.pkt);
                     NetworkConstants.totaldatatransfer += hs.pkt.data;
                     NetworkConstants.totaldatatransferTime += delay;
 

@@ -411,71 +411,8 @@ public class DCMngUtility {
     	return ALK_mf;
     }//................ END of ALK membership .................//
   
-
-    public static double computeDelay_2(NetworkHost srcHost,NetworkHost destHost, double dataTransfer ){
-    	double delay = 0.0; 		
-		String upsw1 = srcHost.sw.getName();
-		String upsw2 = destHost.sw.getName();
-		if(upsw1.equalsIgnoreCase(upsw2)) // Hosts are in the same rack
-		{
-			//System.out.println("Hosts are in the same rack."+upsw1+","+upsw2);
-			System.out.println((srcHost.usedbandwidthRcv + srcHost.usedbandwidthSend) + "," + (destHost.usedbandwidthRcv + destHost.usedbandwidthSend));
-			delay = dataTransfer * (
-			 (8/(srcHost.bandwidth * ( 1- ((srcHost.usedbandwidthRcv + srcHost.usedbandwidthSend)/100))))
-			+ srcHost.sw.switching_delay
-			+ (8/(destHost.bandwidth * ( 1- ((destHost.usedbandwidthRcv + destHost.usedbandwidthSend)/100))))
-			);
-			return delay;
-		}else{
-			String upsw11 = null;
-			String upsw22 = null;
-			for(Switch ns1  : srcHost.sw.uplinkswitches){ 
-				 upsw11 = ns1.getName();
-				for(Switch ns2  : destHost.sw.uplinkswitches){ 
-					 upsw22 = ns2.getName();
-					if(upsw11.equalsIgnoreCase(upsw22)) // Hosts are not in the same rack but same aggSwitch
-					{
-
-						//DCMngUtility.resultFile.println("----Hosts are under the same aggregation switch");
-						delay = dataTransfer * (
-								(8/(srcHost.bandwidth * ( 1- ((srcHost.usedbandwidthRcv + srcHost.usedbandwidthSend)/100))))
-								+ srcHost.sw.switching_delay
-								+ (8/(srcHost.sw.uplinkbandwidth*(1-((srcHost.sw.uplinkSwRcv + srcHost.sw.uplinkSwSend)/100))))
-								+ ns2.switching_delay
-								+ (8/(destHost.sw.uplinkbandwidth*(1-((destHost.sw.uplinkSwRcv + destHost.sw.uplinkSwSend)/100))))
-								+ destHost.sw.switching_delay
-								+ (8/(destHost.bandwidth * ( 1- ((destHost.usedbandwidthRcv + destHost.usedbandwidthSend)/100))))
-								);
-						NetworkConstants.interRackDataTransfer = NetworkConstants.interRackDataTransfer + dataTransfer;
-						return delay;
-					}
-				}
-			}
-			// Hosts are neither in the same rack nore in the same aggSwitch. 
-			// find aggSwitch with minimum packets to transfer
-
-			///DCMngUtility.resultFile.println("----Hosts are communicating using root switch");
-			Switch coreSw =  srcHost.sw.uplinkswitches.get(0).uplinkswitches.get(0);
-			
-			delay = dataTransfer * (
-					(8/(srcHost.bandwidth * ( 1- ((srcHost.usedbandwidthRcv + srcHost.usedbandwidthSend)/100))))// host to edge
-					+ srcHost.sw.switching_delay
-					+ (8/(srcHost.sw.uplinkbandwidth*(1-((srcHost.sw.uplinkSwRcv + srcHost.sw.uplinkSwSend)/100))))// edge to agg
-					+ srcHost.sw.uplinkswitches.get(0).switching_delay
-					+ (8/(coreSw.downlinkbandwidth/((coreSw.pktlist.size()==0)?1:(coreSw.pktlist.size()/2)))) // agg to core
-					+ coreSw.switching_delay
-					+ (8/(coreSw.downlinkbandwidth/((coreSw.pktlist.size()==0)?1:(coreSw.pktlist.size()/2)))) // core to agg
-					+ destHost.sw.uplinkswitches.get(0).switching_delay
-					+ (8/(destHost.sw.uplinkbandwidth*(1-((destHost.sw.uplinkSwRcv + destHost.sw.uplinkSwSend)/100)))) // agg to edge
-					+ destHost.sw.switching_delay
-					+ (8/(destHost.bandwidth * ( 1- ((destHost.usedbandwidthRcv + destHost.usedbandwidthSend)/100)))) // edge to host
-					);
-		}
-		NetworkConstants.interRackDataTransfer = NetworkConstants.interRackDataTransfer + dataTransfer;
-		return delay;
-	}
-    
-    public static double computeDelay(NetworkHost srcHost,NetworkHost destHost, double dataTransfer ){
+    public static double computeDelay(NetworkHost srcHost,NetworkHost destHost, HostPacket pk ){
+    	double dataTransfer = pk.data;
 		double delay = 0.0; 		
 		String upsw1 = srcHost.sw.getName();
 		String upsw2 = destHost.sw.getName();
@@ -521,6 +458,7 @@ public class DCMngUtility {
 				}
 			}
 			// Hosts do not have the same aggSwitch, packets should pass from root
+			//System.out.print("pckets through root from vm "+pk.sender+" to vm "+pk.reciever);
 			
 			int nupsw11 = 0;
 			double from_agg_to_src_edge = 0.0;

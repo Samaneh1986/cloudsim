@@ -258,7 +258,8 @@ public class NetDatacenterBroker extends SimEntity {
 		for (AppCloudlet app : this.getAppCloudletList()) {
 			//cloudletToVmRandomAssign(app);
 			
-			cloudletToVmSequenceAssign(app,strIndex);
+			//cloudletToVmSequenceAssign(app,strIndex);
+			cloudletToVmCustomAssign(app);
 			strIndex = strIndex + app.numbervm;
 			/*  Define the stages of the cloudlets belong to the current AppCloudlet.
 			 *  The related function is called heir, because it needs assigned VMs Id
@@ -394,7 +395,7 @@ public class NetDatacenterBroker extends SimEntity {
 	 */
 	protected void clearDatacenters() {
 		for (Vm vm : getVmsCreatedList()) { 
-			Log.printConcatLine(CloudSim.clock(), ": ", getName(), ": Destroying VM #", vm.getId());
+			//Log.printConcatLine(CloudSim.clock(), ": ", getName(), ": Destroying VM #", vm.getId());
 			sendNow(getVmsToDatacentersMap().get(vm.getId()), CloudSimTags.VM_DESTROY, vm);
 			}
 
@@ -729,5 +730,27 @@ public class NetDatacenterBroker extends SimEntity {
 				app.is_proccessed = 1;
 			
 	}
+	protected void cloudletToVmCustomAssign(AppCloudlet app){
+		
+		for (int i = 0; i < app.numbervm; i++) {
+					//int vmIndex = app.clist.get(i).getVmId(); 
+					int vmid = app.clist.get(i).getVmId();
+					usedVmList.add(vmid);
+					app.clist.get(i).setUserId(getId()); 
+					app.clist.get(i).setVmId(vmid);
+					appCloudletRecieved.put(app.appID, app.numbervm);
+					this.getCloudletSubmittedList().add(app.clist.get(i));
+					cloudletsSubmitted++;
+						
+					// Sending cloudlet
+					sendNow(
+							getVmsToDatacentersMap().get(this.vmList.get(0).getId()),
+							CloudSimTags.CLOUDLET_SUBMIT,
+							app.clist.get(i));
+				} 
+				app.is_proccessed = 1;
+			
+	}
 
+	
 }
