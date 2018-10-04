@@ -272,7 +272,7 @@ public class NetworkHost extends Host {
 			hs.stime = hs.rtime;
             hs.pkt.recievetime = CloudSim.clock();
          //   System.out.println("global sending start time : "+ hs.pkt.recievetime);
-                    double delay = (1000 * hs.pkt.data) / avband;
+                    double delay = 0; // (1000 * hs.pkt.data) / avband;
                     
                     //System.out.println("size :"+hs.pkt.data+", from "+this.getId()+" to "+hostOfsendGlobal.get(hostIx).getId()+" with VM size "+hostOfsendGlobal.get(hostIx).getVmList().size());
                     delay = DCMngUtility.computeDelay(this,hostOfsendGlobal.get(hostIx),hs.pkt.data);

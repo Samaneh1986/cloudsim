@@ -489,7 +489,8 @@ public class DCMngUtility {
 			);
 			//delay = 0.0;
 			return delay;
-		}else{
+		}
+		else{
 			String upsw11 = null;
 			String upsw22 = null;
 			for(Switch ns1  : srcHost.sw.uplinkswitches){ 
@@ -498,14 +499,18 @@ public class DCMngUtility {
 					 upsw22 = ns2.getName();
 					if(upsw11.equalsIgnoreCase(upsw22)) // Hosts are not in the same rack but same aggSwitch
 					{
-						//System.out.println("Hosts are not in the same rack but same aggSwitch."+upsw1+","+upsw2);
-						//System.out.println("agg switch Name :"+ upsw11);
+						double packet_in_src_link = 0.0;
+						double packet_in_dsc_link = 0.0;
+						if(ns2.downlinkswitchpktlist.get(srcHost.sw.getId()) != null)
+							packet_in_src_link= ns2.downlinkswitchpktlist.get(srcHost.sw.getId()).size();
+						if(ns2.downlinkswitchpktlist.get(destHost.sw.getId()) != null)
+							packet_in_dsc_link= ns2.downlinkswitchpktlist.get(destHost.sw.getId()).size();
 						delay = dataTransfer * (
 								 (8/(srcHost.sw.downlinkbandwidth/((srcHost.packetTosendGlobal.size()==0)?1:srcHost.packetTosendGlobal.size())))
 								+ srcHost.sw.switching_delay
-								+ (8/(ns2.downlinkbandwidth/((ns2.pktlist.size()==0)?1:(ns2.pktlist.size()/2))))
+								+ (8/(ns2.downlinkbandwidth/((packet_in_src_link==0)?1:(packet_in_src_link))))
 								+ ns2.switching_delay
-								+ (8/(ns2.downlinkbandwidth/((ns2.pktlist.size()==0)?1:(ns2.pktlist.size()/2))))
+								+ (8/(ns2.downlinkbandwidth/((packet_in_dsc_link==0)?1:(packet_in_dsc_link))))
 								+ destHost.sw.switching_delay
 								+ (8/(destHost.sw.downlinkbandwidth/((destHost.packetTosendGlobal.size()==0)?1:destHost.packetTosendGlobal.size())))
 								);
@@ -515,37 +520,61 @@ public class DCMngUtility {
 					}
 				}
 			}
-			//System.out.println("Hosts are neither in the same rack nore in the same aggSwitch.");
-			// find aggSwitch with minimum packets to transfer
+			// Hosts do not have the same aggSwitch, packets should pass from root
+			
 			int nupsw11 = 0;
+			double from_agg_to_src_edge = 0.0;
+			double from_root_to_src_agg = 0.0;
 			int nupsw22 = 0;
+			double from_agg_to_dest_edge = 0.0;
+			double from_root_to_dest_agg = 0.0;
+			// find aggSwitch with minimum packets to transfer
 			for(Switch ns1  : srcHost.sw.uplinkswitches){
-				if(srcHost.sw.uplinkswitches.get(nupsw11).pktlist.size() > ns1.pktlist.size())
-			       nupsw11 = srcHost.sw.uplinkswitches.indexOf(ns1);
+				if(ns1.packetTohost != null && ns1.packetTohost.get(srcHost.getId())!=null)
+					if(srcHost.sw.uplinkswitches.get(nupsw11).packetTohost.get(srcHost.getId()).size() > ns1.packetTohost.get(srcHost.getId()).size())
+				       nupsw11 = srcHost.sw.uplinkswitches.indexOf(ns1);
 			}
+			if(srcHost.sw.uplinkswitches.get(nupsw11).packetTohost!=null &&
+					srcHost.sw.uplinkswitches.get(nupsw11).packetTohost.get(srcHost.getId())!= null)
+				from_agg_to_src_edge = srcHost.sw.uplinkswitches.get(nupsw11).packetTohost.get(srcHost.getId()).size();
 			for(Switch ns2  : destHost.sw.uplinkswitches){
-				if(srcHost.sw.uplinkswitches.get(nupsw22).pktlist.size() > ns2.pktlist.size())
-					nupsw22 = destHost.sw.uplinkswitches.indexOf(ns2);
+				if(ns2.packetTohost != null && ns2.packetTohost.get(destHost.getId())!=null)
+					if(destHost.sw.uplinkswitches.get(nupsw22).packetTohost.get(destHost.getId()).size() > ns2.packetTohost.get(destHost.getId()).size())
+						nupsw22 = destHost.sw.uplinkswitches.indexOf(ns2);
 			}
+			if(destHost.sw.uplinkswitches.get(nupsw22).packetTohost != null &&
+					destHost.sw.uplinkswitches.get(nupsw22).packetTohost.get(destHost.getId())!= null)
+				from_agg_to_dest_edge = destHost.sw.uplinkswitches.get(nupsw22).packetTohost.get(destHost.getId()).size() ;
 			Switch coreSw = null;
 			int upsw111 = 0;
 			for(Switch ns11  : srcHost.sw.uplinkswitches.get(nupsw11).uplinkswitches){
-				if(srcHost.sw.uplinkswitches.get(nupsw11).uplinkswitches.get(upsw111).pktlist.size() > ns11.pktlist.size())
-					upsw111 = srcHost.sw.uplinkswitches.get(nupsw11).uplinkswitches.indexOf(ns11);
+				for(Switch ns22  : destHost.sw.uplinkswitches.get(nupsw22).uplinkswitches){
+					if(ns11.getName().equalsIgnoreCase(ns22.getName()))
+						upsw111 = srcHost.sw.uplinkswitches.get(nupsw11).uplinkswitches.indexOf(ns11);
+				}
 			}
 			coreSw = srcHost.sw.uplinkswitches.get(nupsw11).uplinkswitches.get(upsw111);
+			if(coreSw.downlinkswitchpktlist!=null && coreSw.downlinkswitchpktlist.get(srcHost.sw.uplinkswitches.get(nupsw11).getId())!=null)
+				from_root_to_src_agg = coreSw.downlinkswitchpktlist.get(srcHost.sw.uplinkswitches.get(nupsw11).getId()).size();
+			if(srcHost.sw.uplinkswitches.get(nupsw11).uplinkswitchpktlist!=null && srcHost.sw.uplinkswitches.get(nupsw11).uplinkswitchpktlist.get(coreSw.getId())!=null )
+				from_root_to_src_agg = from_root_to_src_agg + srcHost.sw.uplinkswitches.get(nupsw11).uplinkswitchpktlist.get(coreSw.getId()).size();
+			if(coreSw.downlinkswitchpktlist!=null && coreSw.downlinkswitchpktlist.get(destHost.sw.uplinkswitches.get(nupsw22).getId())!=null)
+				from_root_to_dest_agg = coreSw.downlinkswitchpktlist.get(destHost.sw.uplinkswitches.get(nupsw22).getId()).size();
+			if(destHost.sw.uplinkswitches.get(nupsw22).uplinkswitchpktlist!=null &&destHost.sw.uplinkswitches.get(nupsw22).uplinkswitchpktlist.get(coreSw.getId())!=null)	
+				from_root_to_dest_agg = from_root_to_dest_agg + destHost.sw.uplinkswitches.get(nupsw22).uplinkswitchpktlist.get(coreSw.getId()).size();
+			
 			delay = dataTransfer * (
-					 (8/(srcHost.sw.downlinkbandwidth/((srcHost.packetTosendGlobal.size()==0)?1:srcHost.packetTosendGlobal.size())))
+					 (1000/(srcHost.sw.downlinkbandwidth/((srcHost.packetTosendGlobal.size()==0)?1:srcHost.packetTosendGlobal.size())))
 					+ srcHost.sw.switching_delay
-					+ (8/(srcHost.sw.uplinkbandwidth/((srcHost.sw.uplinkswitches.get(nupsw11).pktlist.size()==0)?1:(srcHost.sw.uplinkswitches.get(nupsw11).pktlist.size()/2))))
+					+ (1000/(srcHost.sw.uplinkbandwidth/((from_agg_to_src_edge==0)?1:(from_agg_to_src_edge))))
 					+ srcHost.sw.uplinkswitches.get(nupsw11).switching_delay
-					+ (8/(coreSw.downlinkbandwidth/((coreSw.pktlist.size()==0)?1:(coreSw.pktlist.size()/2))))
+					+ (1000/(coreSw.downlinkbandwidth/((from_root_to_src_agg==0)?1:(from_root_to_src_agg))))
 					+ coreSw.switching_delay
-					+ (8/(coreSw.downlinkbandwidth/((coreSw.pktlist.size()==0)?1:(coreSw.pktlist.size()/2))))
+					+ (1000/(coreSw.downlinkbandwidth/((from_root_to_dest_agg==0)?1:(from_root_to_dest_agg))))
 					+ destHost.sw.uplinkswitches.get(nupsw22).switching_delay
-					+ (8/(destHost.sw.uplinkbandwidth/((destHost.sw.uplinkswitches.get(nupsw22).pktlist.size()==0)?1:(destHost.sw.uplinkswitches.get(nupsw22).pktlist.size()/2))))
+					+ (1000/(destHost.sw.uplinkbandwidth/((from_agg_to_dest_edge==0)?1:(from_agg_to_dest_edge))))
 					+ destHost.sw.switching_delay
-					+ (8/(destHost.sw.downlinkbandwidth/((destHost.packetTosendGlobal.size()==0)?1:destHost.packetTosendGlobal.size())))
+					+ (1000/(destHost.sw.downlinkbandwidth/((destHost.packetTosendGlobal.size()==0)?1:destHost.packetTosendGlobal.size())))
 					);
 		}
 		NetworkConstants.interRackDataTransfer = NetworkConstants.interRackDataTransfer + dataTransfer;

@@ -57,8 +57,8 @@ public class Simulation_influxdb {
 			//DCMngUtility.resultFile =  new PrintWriter(rsltFileName);
 			// Create data center
 			//mDc = new ManageDatacenter("Datacenter_001","RANDOM");
-			//mDc = new ManageDatacenter("Datacenter_001","TDB");
-			mDc = new ManageDatacenter("Datacenter_001","GREEDY");
+			mDc = new ManageDatacenter("Datacenter_001","TDB");
+			//mDc = new ManageDatacenter("Datacenter_001","GREEDY");
 			//mDc = new ManageDatacenter("Datacenter_001","BFT");
 			NetworkDatacenter datacenter001 = mDc.createDatacenter();
 			// Create Broker
