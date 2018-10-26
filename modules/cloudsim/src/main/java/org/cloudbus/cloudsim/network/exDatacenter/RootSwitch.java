@@ -44,7 +44,8 @@ public class RootSwitch extends Switch {
 	public RootSwitch(String name, int level, NetworkDatacenter dc) {
 		super(name, level, dc);
 		downlinkswitchpktlist = new HashMap<Integer, List<NetworkPacket>>();
-		downlinkswitches = new ArrayList<Switch>();
+		downlinkswitches = new ArrayList<Switch>(); 
+		bytesToDownSwitchSize = new HashMap<Integer,Double>();
 
 		//downlinkbandwidth = NetworkConstants.BandWidthAggRoot;
 		//latency = NetworkConstants.SwitchingDelayRoot;
@@ -88,6 +89,10 @@ public class RootSwitch extends Switch {
 				}
 					
 				pktlist.add(hspkt);
+				Double bytes_sum = 0.0;
+				for(NetworkPacket p : pktlist)
+					bytes_sum = bytes_sum+p.pkt.data;
+				bytesToDownSwitchSize.put(aggSwtichid, bytes_sum);
 			}
 		}
 	}

@@ -110,7 +110,7 @@ public class NetworkCloudletSpaceSharedScheduler extends CloudletScheduler {
 				}
 				TaskStage st = cl.stages.get(cl.currStagenum);
 				if (st.type == NetworkConstants.EXECUTION) {
-					//System.out.println("Stage for cl "+cl.getCloudletId()+"is EXE ");
+				//	System.out.println("Stage for cl "+cl.getCloudletId()+"is EXE ");
 					// update the time
 					cl.timespentInStage = Math.round(CloudSim.clock() - cl.timetostartStage);
 					if (cl.timespentInStage >= st.time) {
@@ -121,7 +121,7 @@ public class NetworkCloudletSpaceSharedScheduler extends CloudletScheduler {
 
 				
 				if (st.type == NetworkConstants.WAIT_RECV) {
-				//	System.out.println("Stage "+cl.currStagenum+" for cl "+cl.getCloudletId()+"is WAIT_RECV for "+st.peer);
+			//		System.out.println("Stage "+cl.currStagenum+" for cl "+cl.getCloudletId()+ "of app "+cl.appId+"is WAIT_RECV for "+st.peer+" amount:"+st.data);
 					List<HostPacket> pktlist = pktrecv.get(st.peer);
 				//	System.out.println("packet size is "+pktlist.size());
 					List<HostPacket> pkttoremove = new ArrayList<HostPacket>();
@@ -241,7 +241,6 @@ public class NetworkCloudletSpaceSharedScheduler extends CloudletScheduler {
 			cl.currStagenum = currstage + 1;
 			int i = 0;
 			for (i = cl.currStagenum; i < cl.stages.size(); i++) {
-				if (cl.stages.get(i).type == NetworkConstants.WAIT_SEND) {
 					HostPacket pkt = new HostPacket(
 							cl.getVmId(),
 							cl.stages.get(i).peer,
@@ -250,10 +249,12 @@ public class NetworkCloudletSpaceSharedScheduler extends CloudletScheduler {
 							-1,
 							cl.getCloudletId(),
 							cl.stages.get(i).vpeer); 
-					List<HostPacket> pktlist = pkttosend.get(cl.getVmId());
-					if (pktlist == null) {
-						pktlist = new ArrayList<HostPacket>();
-					}
+
+					if (cl.stages.get(i).type == NetworkConstants.WAIT_SEND) {
+						List<HostPacket> pktlist = pkttosend.get(cl.getVmId());
+						if (pktlist == null) {
+							pktlist = new ArrayList<HostPacket>();
+						}
 					pktlist.add(pkt);
 					pkttosend.put(cl.getVmId(), pktlist);
 

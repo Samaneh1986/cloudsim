@@ -261,8 +261,8 @@ public class Host {
 	 */
 	public void vmDestroy(Vm vm) {
 		if (vm != null) {
-			if(vm.getId() == 262)
-				System.out.println("VM 262 removed from host "+this.getId());
+			if(vm.getId() == 486)
+				System.out.println("VM 486 removed from host "+this.getId());
 			vmDeallocate(vm);
 			getVmList().remove(vm);
 			vm.setHost(null);

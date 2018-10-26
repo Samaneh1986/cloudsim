@@ -13,7 +13,9 @@ import org.cloudbus.cloudsim.Vm;
 import org.cloudbus.cloudsim.VmAllocationPolicy;
 import org.cloudbus.cloudsim.distributions.UniformDistr;
 import org.cloudbus.cloudsim.network.exDatacenter.AggregateSwitch;
+import org.cloudbus.cloudsim.network.exDatacenter.DCMngUtility;
 import org.cloudbus.cloudsim.network.exDatacenter.EdgeSwitch;
+import org.cloudbus.cloudsim.network.exDatacenter.NetworkConstants;
 import org.cloudbus.cloudsim.network.exDatacenter.NetworkHost;
 import org.cloudbus.cloudsim.network.exDatacenter.NetworkVm;
 import org.cloudbus.cloudsim.network.exDatacenter.Switch;
@@ -107,9 +109,24 @@ public class VmAllocationPolicyGreedy extends VmAllocationPolicy {
 		EdgeSwitch esw = (EdgeSwitch)host.sw;
 		AggregateSwitch asw = null;
 		System.out.println("VMs requested : " + vmList.size()+ " available no in rack "+esw.getName()+" is "+esw.hostlist.size());
-		if(vmList.size() > esw.hostlist.size()){
+		int available_hosts=0;
+		for(NetworkHost curhost : esw.hostlist.values()){
+			if(curhost.isSuitableForVm(vmList.get(0)))
+				available_hosts++;
+		}
+		if(vmList.size() > available_hosts){
 			asw = (AggregateSwitch) esw.uplinkswitches.get(0);
-			create_distance_matrix(asw);
+			int available_agg_hosts=0;
+			for(Switch csw : asw.downlinkswitches){
+				for(NetworkHost curhost : csw.hostlist.values()){
+					if(curhost.isSuitableForVm(vmList.get(0)))
+						available_agg_hosts++;
+				}
+			}
+			if(vmList.size() > available_agg_hosts)
+				create_distance_matrix(asw.uplinkswitches.get(0));
+			else
+				create_distance_matrix(asw);
 			}
 		else{
 			create_distance_matrix(esw);
@@ -151,7 +168,7 @@ public class VmAllocationPolicyGreedy extends VmAllocationPolicy {
 			host = host_list.get(slctHostIx);
 			result = host.vmCreate(vm);
 			getVmTable().put(vm.getUid(), host);
-		    System.out.println("host with min distance of :"+minDistance);
+			System.out.println("host with min distance of :"+minDistance);
 		    System.out.println("The placement : Vm Id , Host Id :"+vm.getId()+","+host.getId());
 		    minDistance = Double.MAX_VALUE;
 			slctHostIx = -1;
@@ -218,7 +235,16 @@ public class VmAllocationPolicyGreedy extends VmAllocationPolicy {
 private void create_distance_matrix(Switch rsw){ 
 		
 		host_list.clear();
-    	if (rsw.level < 2){
+		if (rsw.level == NetworkConstants.ROOT_LEVEL){
+			for(Switch sw : rsw.downlinkswitches){
+				for(Switch edgsw : sw.downlinkswitches){ 
+					for(NetworkHost host : edgsw.hostlist.values()){ 
+							host_list.add(host);
+					}
+			    }
+			}
+	    	}
+	    	else if (rsw.level == NetworkConstants.Agg_LEVEL){
 		for(Switch sw : rsw.downlinkswitches){
 			for(NetworkHost host : sw.hostlist.values()){
 					host_list.add(host);
@@ -259,7 +285,21 @@ private double distance(NetworkHost host1, NetworkHost host2){
 		distance = 2;
 	}
 	else{ // hosts are connected to the same aggregation switch
-		distance = 4;
+		String edg1Name;
+		String edg2Name;
+		Switch aggSw = null;
+		for(Switch ns1  : host1.sw.uplinkswitches){ 
+			edg1Name = ns1.getName();
+			for(Switch ns2  : host2.sw.uplinkswitches){ 
+				edg2Name = ns2.getName();
+				if(edg1Name.equalsIgnoreCase(edg2Name))
+					aggSw = ns2;
+			}
+		}
+		if(aggSw!=null)	
+			distance = 4;
+		else 
+			distance = 6;
 	}
     return distance;
 }

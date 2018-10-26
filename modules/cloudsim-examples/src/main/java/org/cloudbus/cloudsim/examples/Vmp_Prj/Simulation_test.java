@@ -43,10 +43,13 @@ public class Simulation_test {
 			boolean trace_flag = false; // mean trace events 
 			CloudSim.init(num_user, calendar, trace_flag); 
 			DCMngUtility.dcPerformance = new  DCPerformance();
+			String rsltFileName ="Sim_result_"+calendar.getTime().toString();
+			//DCMngUtility.performanceFile= new PrintWriter("perform"+calendar.getTime().toString());
+			// DCMngUtility.resultFile = new PrintWriter(rsltFileName);
 			// Create data center
-			//mDc = new ManageDatacenter("Datacenter_001","RANDOM");
+			mDc = new ManageDatacenter("Datacenter_001","RANDOM");
 			//mDc = new ManageDatacenter("Datacenter_001","TDB");
-			mDc = new ManageDatacenter("Datacenter_001","GREEDY");
+			//mDc = new ManageDatacenter("Datacenter_001","GREEDY");
 			//mDc = new ManageDatacenter("Datacenter_001","BFT");
 			NetworkDatacenter datacenter001 = mDc.createDatacenter();
 			// Create Broker
@@ -55,7 +58,7 @@ public class Simulation_test {
 			brokerId = broker.getId();
 			//
 			String workingDirectory = System.getProperty("user.dir");
-			InfluxdbWorkload ds = new InfluxdbWorkload(workingDirectory+"/src/main/java/org/cloudbus/cloudsim/examples/Vmp_Prj/jsonDS/dataSet3.json");
+			InfluxdbWorkload ds = new InfluxdbWorkload(workingDirectory+"/src/main/java/org/cloudbus/cloudsim/examples/Vmp_Prj/jsonDS/dataSet_hbase.json");
 			appList = ds.createWorkload(brokerId);
 			vmlistReq = ds.createVMs(brokerId,appList);
 			for(int appId : vmlistReq.keySet()) {
@@ -113,39 +116,26 @@ public class Simulation_test {
 		Log.printLine("========== Simulation results ==========");
 		Log.printLine("Cloudlet ID" + indent + "STATUS" + indent + "Data center ID" + indent + "VM ID"
 				+ indent + "Time" + indent + "Start Time" + indent + "Finish Time");
-
-		jobFile.println("Cloudlet ID" + indent + "STATUS" + indent + "Data center ID" + indent + "VM ID"
-				+ indent + "Time" + indent + "Start Time" + indent + "Finish Time");
 		
 		DecimalFormat dft = new DecimalFormat("###.##");
 		for (int i = 0; i < size; i++) {
 			cloudlet = list.get(i);
 			Log.print(indent + cloudlet.getCloudletId() + indent + indent);
-			jobFile.print(indent + cloudlet.getCloudletId() + indent + indent);
 
 			if (cloudlet.getStatus() == Cloudlet.SUCCESS) {
 				Log.print("SUCCESS");
-				jobFile.print("SUCCESS");
 				Log.printLine(indent + indent + cloudlet.getResourceId() + indent + indent + indent
-						+ cloudlet.getVmId() + indent + indent + dft.format(cloudlet.getActualCPUTime())
-						+ indent + indent + dft.format(cloudlet.getExecStartTime()) + indent + indent
-						+ dft.format(cloudlet.getFinishTime()));
-				jobFile.println(indent + indent + cloudlet.getResourceId() + indent + indent + indent
 						+ cloudlet.getVmId() + indent + indent + dft.format(cloudlet.getActualCPUTime())
 						+ indent + indent + dft.format(cloudlet.getExecStartTime()) + indent + indent
 						+ dft.format(cloudlet.getFinishTime()));
 			}
 			else{
 				Log.print("FAILED");
-				jobFile.print("FAILED");
 				Log.printLine(indent + indent + cloudlet.getResourceId() + indent + indent + indent
 						+ cloudlet.getVmId() + indent + indent + dft.format(cloudlet.getActualCPUTime())
 						+ indent + indent + dft.format(cloudlet.getExecStartTime()) + indent + indent
 						+ dft.format(cloudlet.getFinishTime()));
-				jobFile.println(indent + indent + cloudlet.getResourceId() + indent + indent + indent
-						+ cloudlet.getVmId() + indent + indent + dft.format(cloudlet.getActualCPUTime())
-						+ indent + indent + dft.format(cloudlet.getExecStartTime()) + indent + indent
-						+ dft.format(cloudlet.getFinishTime()));
+				
 			}
 		}
 		jobFile.close();

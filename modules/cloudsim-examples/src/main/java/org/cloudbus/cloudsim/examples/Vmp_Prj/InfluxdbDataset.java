@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set; 
 
 import org.json.simple.JSONArray;
@@ -32,10 +33,9 @@ public class InfluxdbDataset {
 	public long exec_time;
 	
 	
-	
-	
 	private  JSONObject dataOBJ;
 	private Iterator<String> datasetKeys;
+	private List sortedKeySet;
 	
 	InfluxdbDataset(String datasetPathInput){
 		this.datasetPath = datasetPathInput;
@@ -48,7 +48,7 @@ public class InfluxdbDataset {
             JSONObject rootJSON =  (JSONObject) obj;
             dataOBJ = (JSONObject) rootJSON.get("data");
             Set<String> keySet = dataOBJ.keySet(); 
-            List sortedKeySet = new ArrayList(keySet);
+            sortedKeySet = new ArrayList(keySet);
             Collections.sort(sortedKeySet);
             datasetKeys = sortedKeySet.iterator();
             
@@ -103,7 +103,21 @@ public class InfluxdbDataset {
 	}
 	
 	public boolean resetValues(){
-		return false;
+		appId = null;
+		cloudletId= null;
+		length= 0;
+		fileSize= 0;
+		outputSize= 0;
+		memory= 0;
+		pesNumber= 0;
+		stageTyp= null;
+		satageNo= 0;
+		data_transfered= 0;
+		rcv_clId= 0;
+		exec_time= 0;
+		datasetKeys = sortedKeySet.iterator();
+        
+		return true;
 	}
 
 }

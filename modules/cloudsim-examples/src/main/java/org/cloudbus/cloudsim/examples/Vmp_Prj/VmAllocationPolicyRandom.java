@@ -102,6 +102,7 @@ public class VmAllocationPolicyRandom extends VmAllocationPolicy {
 	public List<Map<String, Object>> optimizeAllocation(List<? extends Vm> vmList) {
 		// TODO Auto-generated method stub
 		boolean result = false; 
+		usedHosts.clear();
 		UniformDistr ufrnd = new UniformDistr(0, super.getHostList().size()); 
 		for(Vm vm : vmList){
 			result = false;  

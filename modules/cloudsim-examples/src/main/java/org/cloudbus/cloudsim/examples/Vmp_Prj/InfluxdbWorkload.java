@@ -8,6 +8,7 @@ import java.util.Map;
 import org.cloudbus.cloudsim.UtilizationModel;
 import org.cloudbus.cloudsim.UtilizationModelFull;
 import org.cloudbus.cloudsim.network.exDatacenter.AppCloudlet;
+import org.cloudbus.cloudsim.network.exDatacenter.DCMngUtility;
 import org.cloudbus.cloudsim.network.exDatacenter.NetworkCloudlet;
 import org.cloudbus.cloudsim.network.exDatacenter.NetworkCloudletSpaceSharedScheduler;
 import org.cloudbus.cloudsim.network.exDatacenter.NetworkConstants;
@@ -21,7 +22,7 @@ public class InfluxdbWorkload {
 	
 	// These Ids are used to manage if data belongs to a new cloudlet or application
 	private String oldAppId;  //NetworkConstants.currentAppId
-	private String oldCldId; //NetworkConstants.currentCloudletId
+	private String oldCldId; //NetworkConstants.currentCloudletId 
 	//private int stageId;
 	private int cldNO;
 	
@@ -31,6 +32,7 @@ public class InfluxdbWorkload {
 		this.datasetPath = datasetPathInput;
 		dataset = new InfluxdbDataset(datasetPath);
 		applicatonList = new ArrayList<AppCloudlet>();
+		DCMngUtility.appClistIndex = new HashMap<Integer, ArrayList<Integer>>();
 	}
 	
 	//.........function to create a list of application..............
@@ -61,9 +63,10 @@ public class InfluxdbWorkload {
 				cldNO++;
 				curCl=newCloudlet();
 				curCl.appId = curApp.appID;
+				DCMngUtility.appClistIndex.get(curCl.appId).add(Integer.valueOf(dataset.cloudletId));
 				
-				if(curApp.SendDataTo.get(cldNO-1)!=null) 
-					curCl.numStage =curApp.SendDataTo.get(cldNO-1).size()+1;
+				if(curApp.SendDataTo.get(Integer.valueOf(dataset.cloudletId))!=null) 
+					curCl.numStage =curApp.SendDataTo.get(Integer.valueOf(dataset.cloudletId)).size()+1;
 				
 				boolean result = manageStages(curApp, curCl);
 				//stageId++;
@@ -86,6 +89,7 @@ public class InfluxdbWorkload {
 			cldNO++;
 			curCl=newCloudlet();
 			curCl.appId = curApp.appID;
+			DCMngUtility.appClistIndex.get(curCl.appId).add(Integer.valueOf(dataset.cloudletId));
 			boolean result = manageStages(curApp, curCl);
 			//stageId++;
 			//System.out.println("new app with Id "+dataset.appId);
@@ -106,9 +110,10 @@ public class InfluxdbWorkload {
 	private boolean manageStages(AppCloudlet app, NetworkCloudlet cl){
 		// create new stage based on dataset info
 		//for execution satge we add a stage
-		if(this.dataset.stageTyp.equals("exec_time")){
-			cl.stages.add(new TaskStage(NetworkConstants.EXECUTION, 0, Math.round(this.dataset.exec_time),cl.numStage, 0, 0, 0));
-			cl.numStage++;
+		if(this.dataset.stageTyp.equals("data_execute")){
+			cl.stages.remove(0);
+			cl.stages.add(new TaskStage(NetworkConstants.EXECUTION, 0, Math.round(this.dataset.exec_time*1000),cl.numStage, 0, 0, 0));
+			//cl.numStage++;
 			return true;
 		}
 		
@@ -116,31 +121,38 @@ public class InfluxdbWorkload {
 		int resiverId=this.dataset.rcv_clId;
 		double dataMB = this.dataset.data_transfered;
 		if(dataMB>0){
-			if(app.SendDataTo.get(cldNO-1)==null){ // first data transferring stage for current cloudlet
+			if(app.SendDataTo.get(Integer.valueOf(dataset.cloudletId))==null){ // first data transferring stage for current cloudlet
 				Map<int[],Double> info = new HashMap<int[],Double>();
 				info.put(new int[]{(int) cl.numStage,resiverId}, dataMB); 
-			    app.SendDataTo.put((cldNO-1),info);
+			    app.SendDataTo.put(Integer.valueOf(dataset.cloudletId),info);
 			}
 			else{
-				app.SendDataTo.get(cldNO-1).put(new int[]{(int) cl.numStage,resiverId}, dataMB);
+				app.SendDataTo.get(Integer.valueOf(dataset.cloudletId)).put(new int[]{(int) cl.numStage,resiverId}, dataMB);
 			}
 			cl.numStage++;
 			//create a data recieve stage
 			if(app.clist.size() > resiverId){
 				NetworkCloudlet rcp_cl = app.clist.get(resiverId);
-				app.SendDataTo.get(resiverId).put(new int[]{(int) rcp_cl.numStage,(cldNO-1)}, (-1 * dataMB));
+				if(app.SendDataTo.get(resiverId) == null){
+					Map<int[],Double> info = new HashMap<int[],Double>();
+					info.put(new int[]{(int) rcp_cl.numStage,(Integer.valueOf(dataset.cloudletId))}, (-1 * dataMB));
+					app.SendDataTo.put(resiverId,info);
+				}
+				else{
+					app.SendDataTo.get(resiverId).put(new int[]{(int) rcp_cl.numStage,(Integer.valueOf(dataset.cloudletId))}, (-1 * dataMB));
+				}
 				rcp_cl.numStage++;
 			}
 			else
 			{
 				if(app.SendDataTo.get(resiverId)==null){ // first data transferring stage for current cloudlet
 					Map<int[],Double> info = new HashMap<int[],Double>();
-					info.put(new int[]{ 1, (cldNO-1)},  (-1 * dataMB)); 
+					info.put(new int[]{ 1, (Integer.valueOf(dataset.cloudletId))},  (-1 * dataMB)); 
 				    app.SendDataTo.put(resiverId,info);
-				}
+				    }
 				else{
 					int lastStage = app.SendDataTo.get(resiverId).size() + 1;
-					app.SendDataTo.get(resiverId).put(new int[]{(int) lastStage,(cldNO-1)}, (-1 * dataMB));
+					app.SendDataTo.get(resiverId).put(new int[]{(int) lastStage,Integer.valueOf(dataset.cloudletId)}, (-1 * dataMB));
 					
 				} 
 			
@@ -163,7 +175,7 @@ public class InfluxdbWorkload {
 				utilizationModel,
 				utilizationModel);
 		// create new cloudlet based on dataset info
-		cl.stages.add(new TaskStage(NetworkConstants.EXECUTION, 0, 500, 0, 10, 0, 0));
+		cl.stages.add(new TaskStage(NetworkConstants.EXECUTION, 0, 1000, 0, 10, 0, 0));
 		cl.numStage = 1;
 		return cl;
 	}
@@ -171,7 +183,8 @@ public class InfluxdbWorkload {
 	private AppCloudlet newApplication(){
 		AppCloudlet app = new AppCloudlet(AppCloudlet.APP_BigData, NetworkConstants.currentAppId, 0, 0, this.brokerId);;
 		app.is_proccessed = 0;
-		//app.SendDataTo = new ArrayList<Map<int[],Double>>();  
+		ArrayList<Integer> clistIndex  = new ArrayList<Integer>();  
+		DCMngUtility.appClistIndex.put(app.appID, clistIndex);
 		// create new applicatin based on dataset info
 		return app;
 	}
@@ -211,5 +224,8 @@ public class InfluxdbWorkload {
     	
     	
 		return vmlistReq;
+	}
+	public boolean resetDataset(){
+		return this.dataset.resetValues();
 	}
 }

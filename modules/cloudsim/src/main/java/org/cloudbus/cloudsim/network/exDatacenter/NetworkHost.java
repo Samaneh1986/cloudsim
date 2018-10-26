@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map.Entry;
 
+import org.cloudbus.cloudsim.Datacenter;
 import org.cloudbus.cloudsim.Host;
 import org.cloudbus.cloudsim.Pe;
 import org.cloudbus.cloudsim.Vm;
@@ -40,9 +41,9 @@ import org.cloudbus.cloudsim.provisioners.RamProvisioner;
  * @since CloudSim Toolkit 3.0
  */
 public class NetworkHost extends Host {
-
-	private double passTime = 0;
 	
+	private double passTime = 0;
+	public double bytesTosendGlobalSize = 0.0;
 	public List<NetworkPacket> packetTosendLocal;
 	public List<NetworkPacket> packetTosendGlobal;
 	public List<NetworkHost> hostOfsendGlobal;
@@ -67,9 +68,7 @@ public class NetworkHost extends Host {
          * @todo What exactly is this bandwidth?
          * Because it is redundant with the bw capacity defined in {@link Host#bwProvisioner}
          */
-	public double bandwidth; 
-	public double usedbandwidthSend; 
-	public double usedbandwidthRcv; 
+	public double bandwidth;  
 	
 	private double utilizedCpu;
 	private double unusedCpu;
@@ -99,8 +98,7 @@ public class NetworkHost extends Host {
 		hostOfsendGlobal = new ArrayList<NetworkHost>();
 		
 		utilizedCpu = 0.0;
-		unusedCpu = 0.0;
-
+		unusedCpu = 0.0; 
 	}
 	  
 
@@ -130,8 +128,6 @@ public class NetworkHost extends Host {
 	public boolean vmCreate(Vm vm) {
 		// TODO Auto-generated method stub 
 		boolean result = super.vmCreate(vm);
-		if(vm.getId() == 262)
-			System.out.println("VM 262 created result : "+result);
 		//System.out.println("VM creating ......");
 		double peUsedPrc = 0.0;
 		double freeCpu = 0;
@@ -183,7 +179,8 @@ public class NetworkHost extends Host {
 			hs.pkt.recievetime = CloudSim.clock();
  
 			Vm vm = VmList.getById(getVmList(), hs.pkt.reciever);  
-             
+			if(hs.pkt.reciever==483)
+				System.out.println(" searching for VM "+hs.pkt.reciever+" on host "+this.getId()+", result:"+vm);
 			List<HostPacket> pktlist = ((NetworkCloudletSpaceSharedScheduler) vm.getCloudletScheduler()).pktrecv
 					.get(hs.pkt.sender);
 
@@ -225,21 +222,12 @@ public class NetworkHost extends Host {
                                         }
                                 }
                        }
+                        bytesTosendGlobalSize = 0.0;
+                        for(NetworkPacket p : packetTosendGlobal)
+                        	bytesTosendGlobalSize=bytesTosendGlobalSize+p.pkt.data;
                         pktlist.clear();
                     }
 		}
-		/*****
-		 *** compute up-link filled percentage by sending data ***
-		 *****/
-		
-		double totSendTraffic = 0.0;
-		for( NetworkPacket p : packetTosendGlobal){
-			totSendTraffic = totSendTraffic + p.pkt.data * 8; // convert Byte to Bit
-		} 
-		if (totSendTraffic > 0){
-			usedbandwidthSend = (totSendTraffic / this.bandwidth) * 100; 
-		}
-		/********************************************************/
 		boolean flag = false;
 		
 
@@ -281,6 +269,7 @@ public class NetworkHost extends Host {
                     
                     //System.out.println("size :"+hs.pkt.data+", from "+this.getId()+" to "+hostOfsendGlobal.get(hostIx).getId()+" with VM size "+hostOfsendGlobal.get(hostIx).getVmList().size());
                     delay = DCMngUtility.computeDelay(this,hostOfsendGlobal.get(hostIx),hs.pkt);
+                    delay = delay +100; //convert s to ms
                     NetworkConstants.totaldatatransfer += hs.pkt.data;
                     NetworkConstants.totaldatatransferTime += delay;
 
@@ -316,6 +305,5 @@ public class NetworkHost extends Host {
 	public double getUnusedCpu(){
 		return unusedCpu;
 	}
-
 
 }

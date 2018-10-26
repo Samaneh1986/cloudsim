@@ -257,15 +257,17 @@ public class NetDatacenterBroker extends SimEntity {
 		int strIndex = 0;
 		for (AppCloudlet app : this.getAppCloudletList()) {
 			//cloudletToVmRandomAssign(app);
-			
-			//cloudletToVmSequenceAssign(app,strIndex);
-			cloudletToVmCustomAssign(app);
-			strIndex = strIndex + app.numbervm;
-			/*  Define the stages of the cloudlets belong to the current AppCloudlet.
-			 *  The related function is called heir, because it needs assigned VMs Id
-			 *  for defining send/receive stage.
-			 */
-			DCMngUtility.defineStagesOfTable(app);
+			if(app.alreadyProcess == 0 ){
+				app.alreadyProcess = 1;
+				//cloudletToVmSequenceAssign(app,strIndex);
+				cloudletToVmCustomAssign(app);
+				strIndex = strIndex + app.numbervm;
+				/*  Define the stages of the cloudlets belong to the current AppCloudlet.
+				 *  The related function is called heir, because it needs assigned VMs Id
+				 *  for defining send/receive stage.
+				 */
+				DCMngUtility.defineStagesOfTable(app);
+			}
 		}
 		setVmsRequested(0);
 		setVmsAcks(0);

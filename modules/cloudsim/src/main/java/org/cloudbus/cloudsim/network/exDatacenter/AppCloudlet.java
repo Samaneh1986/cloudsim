@@ -38,6 +38,7 @@ import org.cloudbus.cloudsim.core.CloudSim;
  * @todo The attributes have to be defined as private.
  */
 public class AppCloudlet {
+	public int alreadyProcess = 0;
 
 	public int type;
 

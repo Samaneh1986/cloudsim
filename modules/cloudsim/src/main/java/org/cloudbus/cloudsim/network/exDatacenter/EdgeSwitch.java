@@ -51,6 +51,7 @@ public class EdgeSwitch extends Switch {
     public double EG_ARA = 0; // the average of available ram per server
     public double EG_ALK = 0; // the average of links’ occupied percentage
     
+    public double tot_ram = 0; // the total ram of connected hosts
     public double tot_pe = 0; // the total process of connected hosts
     public double tot_free_pe = 0; // the total free process of connected hosts
 	
@@ -59,10 +60,7 @@ public class EdgeSwitch extends Switch {
 		hostlist = new HashMap<Integer, NetworkHost>();
 		uplinkswitchpktlist = new HashMap<Integer, List<NetworkPacket>>();
 		packetTohost = new HashMap<Integer, List<NetworkPacket>>();
-		//uplinkbandwidth = NetworkConstants.BandWidthEdgeAgg;
-		//downlinkbandwidth = NetworkConstants.BandWidthEdgeHost;
-		//switching_delay = NetworkConstants.SwitchingDelayEdge;
-		//numport = NetworkConstants.EdgeSwitchPort;
+		bytesTohostSize = new HashMap<Integer,Double>();
 		uplinkswitches = new ArrayList<Switch>();
 	}
 
@@ -96,6 +94,10 @@ public class EdgeSwitch extends Switch {
 				packetTohost.put(hostid, pktlist);
 			}
 			pktlist.add(hspkt);
+			Double bytes_sum = 0.0;
+			for(NetworkPacket p : pktlist)
+				bytes_sum = bytes_sum+p.pkt.data;
+			bytesTohostSize.put(hostid, bytes_sum);
 			return;
 
 		}
@@ -103,22 +105,6 @@ public class EdgeSwitch extends Switch {
 		// packet is to be sent to upper switch
 		// ASSUMPTION EACH EDGE is Connected to one aggregate level switch
 		// if there are more than one Aggregate level switch one need to modify following code
-		
-		/*****
-		 ***  compute the occupied percentage of switch up-link by sending data ***
-		 ******/
-		double fillPrc = 0.0;
-		for(int i=0 ; i< uplinkswitchpktlist.size(); i++){
-			for( NetworkPacket p :uplinkswitchpktlist.get(uplinkswitches.get(0).getId())){
-				fillPrc = fillPrc + p.pkt.data;
-			}
-		}
-		fillPrc = 	(fillPrc +(hspkt.pkt.data)) * 8; // convert Byte to Bit
-		fillPrc = 	(fillPrc/this.uplinkbandwidth)*100;
-		//System.out.println(CloudSim.clock()+": up link in sw "+this.getId()+" is filled by prc :"+fillPrc);
-		if(fillPrc > 0)
-			uplinkSwSend = fillPrc;
-		/***********************************************************/
 
 		Switch sw = uplinkswitches.get(0);
 		List<NetworkPacket> pktlist = uplinkswitchpktlist.get(sw.getId());
@@ -155,27 +141,13 @@ public class EdgeSwitch extends Switch {
 		}
 		if (packetTohost != null) {
 			for (Entry<Integer, List<NetworkPacket>> es : packetTohost.entrySet()) {
-				/*****
-				*** compute target Host up-link filled percentage by receiving data ***
-				******/
-				int targetHostId = es.getKey();
-				double totSendTraffic = 0.0;
-				for( NetworkPacket p : es.getValue()){
-					totSendTraffic = totSendTraffic + p.pkt.data * 8; // convert Byte to Bit
-				}
-				if(totSendTraffic > 0){
-					NetworkHost targetHost = this.hostlist.get(targetHostId);
-					targetHost.usedbandwidthRcv = (totSendTraffic / targetHost.bandwidth) * 100;
-				}
-				/***********************************************************************/
+				
 				List<NetworkPacket> hspktlist = es.getValue();
 				if (!hspktlist.isEmpty()) {
 					double avband = downlinkbandwidth / hspktlist.size();
 					Iterator<NetworkPacket> it = hspktlist.iterator();
 					while (it.hasNext()) {
-						NetworkPacket hspkt = it.next();
-						// hspkt.recieverhostid=tosend;
-						// hs.packetrecieved.add(hspkt); 
+						NetworkPacket hspkt = it.next(); 
 						this.send(getId(), hspkt.pkt.data / avband, CloudSimTags.Network_Event_Host, hspkt);
 					}
 					hspktlist.clear();

@@ -32,12 +32,12 @@ public class ManageDatacenter {
 	
 	// Network structure variables
 	// !!! all the Bandwidth are in MB, because of overflow!!!
-	private int EdgeSwitchPort = 40;
+	private int EdgeSwitchPort = 20;
 	private int AggSwitchPort = 2;
-	private int RootSwitchPort = 4;
-	private long BandWidthEdgeHost = 1 * 1024; // 1gb , BW number is in MB
-	private long BandWidthEdgeAgg = 10 * 1024 ;// 10gb
-	private long BandWidthAggRoot = 10 * 1024 ;// 10gb
+	private int RootSwitchPort = 5;
+	private long BandWidthEdgeHost = 10 * 1024; // 1gb , BW number is in MB
+	private long BandWidthEdgeAgg = 40 * 1024 ;// 10gb
+	private long BandWidthAggRoot = 40 * 1024 ;// 10gb
 	private double SwitchingDelayRoot = .00285; // ms
 	private double SwitchingDelayAgg  = .00245; // ms
 	private double SwitchingDelayEdge = .00157; // ms
@@ -55,10 +55,11 @@ public class ManageDatacenter {
 		int ram = 8192; // host memory (MB) = 8GB
 		long storage = 1000000; // host storage
 		long bw = BandWidthEdgeHost;
-		long total_hosts = EdgeSwitchPort * AggSwitchPort * RootSwitchPort;
-		int high_cpu_hosts = (int) Math.round(total_hosts * 0.6); // 32 CPU, 8GB Ram
-		int hig_ram_hosts =  (int) Math.round(total_hosts * 0.3); // 16 CPU, 16GB Ram
-		int mid_cpu_ram_hosts =  (int) (total_hosts - (high_cpu_hosts + hig_ram_hosts)); // 8 CPU, 8GB Ram
+		int high_cpu_hosts = (int) (Math.round(EdgeSwitchPort * 0.6) * AggSwitchPort * RootSwitchPort); // 32 CPU, 8GB Ram
+		int hig_ram_hosts =  (int) (Math.round(EdgeSwitchPort * 0.3) * AggSwitchPort * RootSwitchPort); // 16 CPU, 16GB Ram
+		int mid_cpu_ram_hosts =  (int) ((EdgeSwitchPort - (Math.round(EdgeSwitchPort * 0.6) + Math.round(EdgeSwitchPort * 0.3))) * AggSwitchPort * RootSwitchPort); // 8 CPU, 8GB Ram
+		long total_hosts = high_cpu_hosts + hig_ram_hosts + mid_cpu_ram_hosts;
+		System.out.println("config:"+total_hosts+"="+high_cpu_hosts +","+ hig_ram_hosts+"," + mid_cpu_ram_hosts);
 		for (int i = 0; i <high_cpu_hosts; i++) { 
 			List<Pe> peList = new ArrayList<Pe>();
 			peList.add(new Pe(0, new PeProvisionerSimple(mips)));  
@@ -196,11 +197,6 @@ public class ManageDatacenter {
 					VMPolicy,
 					storageList,
 					0);
-			/**if(VmAllcPolicy.compareTo("TDB") == 0){
-				datacenter.VmAllcPlcyTyp = DCMngUtility.VM_ALLC_PLCY_CLUSTER;
-			}else{
-				datacenter.VmAllcPlcyTyp = DCMngUtility.VM_ALLC_PLCY_SINGLE;
-			}**/
 			
 			datacenter.VmAllcPlcyTyp = DCMngUtility.VM_ALLC_PLCY_CLUSTER;
 			
@@ -265,41 +261,44 @@ public class ManageDatacenter {
 					aggswitch[as].downlinkbandwidth = BandWidthEdgeAgg;  
 					
 					for(int agghostno=0; agghostno<EdgeSwitchPort;){
-						if(agghostno < (EdgeSwitchPort * 0.6)){
+						if(agghostno < Math.round(EdgeSwitchPort * 0.6)){
 							NetworkHost nhs = (NetworkHost) datacenter.getHostList().get(highcpuhost);
+							
+							if(nhs.sw == null){
+								nhs.bandwidth = BandWidthEdgeHost; 
+								System.out.println("host ID :" + nhs.getId()+" index "+highcpuhost+"connect to switch :" + edgeswitch[i].getName());
+								edgeswitch[i].hostlist.put(nhs.getId(), nhs);
+								datacenter.HostToSwitchid.put(nhs.getId(), edgeswitch[i].getId());
+								nhs.sw = edgeswitch[i];  
+								agghostno++; 
+							}
 							highcpuhost++;
-							if(nhs.sw == null){
-								nhs.bandwidth = BandWidthEdgeHost; 
-								System.out.println("host ID :" + nhs.getId()+"connect to switch :" + edgeswitch[i].getName());
-								edgeswitch[i].hostlist.put(nhs.getId(), nhs);
-								datacenter.HostToSwitchid.put(nhs.getId(), edgeswitch[i].getId());
-								nhs.sw = edgeswitch[i];  
-								agghostno++; 
-							}
 						}
-						if((EdgeSwitchPort * 0.6) <= agghostno && agghostno < (EdgeSwitchPort * 0.9)){
+						if(Math.round(EdgeSwitchPort * 0.6) <= agghostno && agghostno < Math.round(EdgeSwitchPort * 0.9)){
 							NetworkHost nhs = (NetworkHost) datacenter.getHostList().get(highramhost);
+							
+							if(nhs.sw == null){
+								nhs.bandwidth = BandWidthEdgeHost; 
+								System.out.println("host ID :" + nhs.getId()+" index "+highramhost+"connect to switch :" + edgeswitch[i].getName());
+								edgeswitch[i].hostlist.put(nhs.getId(), nhs);
+								datacenter.HostToSwitchid.put(nhs.getId(), edgeswitch[i].getId());
+								nhs.sw = edgeswitch[i];  
+								agghostno++; 
+							}
 							highramhost++;
-							if(nhs.sw == null){
-								nhs.bandwidth = BandWidthEdgeHost; 
-								System.out.println("host ID :" + nhs.getId()+"connect to switch :" + edgeswitch[i].getName());
-								edgeswitch[i].hostlist.put(nhs.getId(), nhs);
-								datacenter.HostToSwitchid.put(nhs.getId(), edgeswitch[i].getId());
-								nhs.sw = edgeswitch[i];  
-								agghostno++; 
-							}
 						}
-						if((EdgeSwitchPort * 0.9) <= agghostno){
+						if(Math.round(EdgeSwitchPort * 0.9) <= agghostno){
 							NetworkHost nhs = (NetworkHost) datacenter.getHostList().get(midramcpuhost);
-							midramcpuhost++;
+							
 							if(nhs.sw == null){
 								nhs.bandwidth = BandWidthEdgeHost; 
-								System.out.println("host ID :" + nhs.getId()+"connect to switch :" + edgeswitch[i].getName());
+								System.out.println("host ID :" + nhs.getId()+" index "+midramcpuhost+"connect to switch :" + edgeswitch[i].getName());
 								edgeswitch[i].hostlist.put(nhs.getId(), nhs);
 								datacenter.HostToSwitchid.put(nhs.getId(), edgeswitch[i].getId());
 								nhs.sw = edgeswitch[i];  
 								agghostno++; 
 							}
+							midramcpuhost++;
 						}
 				}
 				}  

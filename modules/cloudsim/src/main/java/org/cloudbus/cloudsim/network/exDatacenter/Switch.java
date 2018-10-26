@@ -53,6 +53,7 @@ public class Switch extends SimEntity {
          * value is the packets sent to that switch.
          */
 	public Map<Integer, List<NetworkPacket>> uplinkswitchpktlist;
+	public Map<Integer,Double> bytesToUpSwitchSize;
 
         /**
          * Map of packets sent to switches on the downlink,
@@ -60,6 +61,7 @@ public class Switch extends SimEntity {
          * value is the packets sent to that switch.
          */
 	public Map<Integer, List<NetworkPacket>> downlinkswitchpktlist;
+	public Map<Integer,Double> bytesToDownSwitchSize;
 
         /**
          * Map of hosts connected to the switch, where each key is the host ID
@@ -70,18 +72,12 @@ public class Switch extends SimEntity {
         /**
          * List of uplink switches.
          */
-	public List<Switch> uplinkswitches;
-	//public List<Double> uplinkSwFullPrc;
-	public double uplinkSwSend;
-	public double uplinkSwRcv;
+	public List<Switch> uplinkswitches;  
 	
-	private double passTime = 0;
-
         /**
          * List of downlink switches.
          */
-	public List<Switch> downlinkswitches;
-	//public List<Double> downlinkSwFullPrc;
+	public List<Switch> downlinkswitches; 
 
         /**
          * Map of packets sent to hosts connected in the switch,
@@ -89,6 +85,7 @@ public class Switch extends SimEntity {
          * value is the packets sent to that host.
          */
 	public Map<Integer, List<NetworkPacket>> packetTohost;
+	public Map<Integer,Double> bytesTohostSize;
 
         /**
          * The switch type: edge switch or aggregation switch.
@@ -161,7 +158,7 @@ public class Switch extends SimEntity {
 	public String EG_value = null;
     public double EG_SCORE=0; // the membership degree of this switch for eligibility
 
-    public double ToT_EG_SCORE=0; // sum of the membership degree of this downlink switches
+    public int EG_MAX_NS=0; // Max available servers connected to downlink switches
         /**
          * A map of VMs connected to this switch.
          * @todo The list doesn't appear to be updated (VMs added to it) anywhere. 
@@ -185,15 +182,16 @@ public class Switch extends SimEntity {
 	@Override
 	public void processEvent(SimEvent ev) {
 		// Log.printLine(CloudSim.clock()+"[Broker]: event received:"+ev.getTag()); 
-		
 		switch (ev.getTag()) {
 		// Resource characteristics request
 			case CloudSimTags.Network_Event_UP:
 				// process the packet from down switch or host
+				DCMngUtility.dcPerformance.updateSwitchParams(this,"dataOnDownLink",(NetworkPacket) ev.getData());
 				processpacket_up(ev);
 				break;
 			case CloudSimTags.Network_Event_DOWN:
 				// process the packet from uplink
+				DCMngUtility.dcPerformance.updateSwitchParams(this,"dataOnUpLink",(NetworkPacket) ev.getData());
 				processpacket_down(ev);
 				break;
 			case CloudSimTags.Network_Event_send:
@@ -201,6 +199,7 @@ public class Switch extends SimEntity {
 				break;
 
 			case CloudSimTags.Network_Event_Host:
+				DCMngUtility.dcPerformance.updateSwitchParams(this,"dataOnDownLink",(NetworkPacket) ev.getData());
 				processhostpacket(ev);
 				break;
 			// Resource characteristics answer
@@ -212,11 +211,7 @@ public class Switch extends SimEntity {
 				processOtherEvent(ev);
 				break;
 		}
-		if((CloudSim.clock() - passTime )>10 ){
-		//	System.out.println("this is ranning ..."+this.pktlist.size()+","+this.uplinkswitchpktlist.size());
-			DCMngUtility.dcPerformance.updateSwitchParams(this);
-			passTime = CloudSim.clock();
-		}
+		
 	}
 
         /**
@@ -257,6 +252,10 @@ public class Switch extends SimEntity {
 				packetTohost.put(hostid, pktlist);
 			}
 			pktlist.add(hspkt);
+			Double bytes_sum = 0.0;
+			for(NetworkPacket p : pktlist)
+				bytes_sum = bytes_sum+p.pkt.data;
+			bytesTohostSize.put(hostid, bytes_sum);
 			return;
 		}
 		if (level == NetworkConstants.Agg_LEVEL) {
@@ -269,6 +268,10 @@ public class Switch extends SimEntity {
 				downlinkswitchpktlist.put(switchid, pktlist);
 			}
 			pktlist.add(hspkt);
+			Double bytes_sum = 0.0;
+			for(NetworkPacket p : pktlist)
+				bytes_sum = bytes_sum+p.pkt.data;
+			bytesToDownSwitchSize.put(switchid, bytes_sum);
 			return;
 		}
 
@@ -307,6 +310,10 @@ public class Switch extends SimEntity {
 					packetTohost.put(hostid, pktlist);
 				}
 				pktlist.add(hspkt);
+				Double bytes_sum = 0.0;
+				for(NetworkPacket p : pktlist)
+					bytes_sum = bytes_sum+p.pkt.data;
+				bytesTohostSize.put(hostid, bytes_sum);
 				return;
 
 			}
@@ -320,6 +327,10 @@ public class Switch extends SimEntity {
 				uplinkswitchpktlist.put(sw.getId(), pktlist);
 			}
 			pktlist.add(hspkt);
+			Double bytes_sum = 0.0;
+			for(NetworkPacket p : pktlist)
+				bytes_sum = bytes_sum+p.pkt.data;
+			bytesToUpSwitchSize.put(sw.getId(), bytes_sum);
 			return;
 		}
 		if (level == NetworkConstants.Agg_LEVEL) {
@@ -340,6 +351,10 @@ public class Switch extends SimEntity {
 					downlinkswitchpktlist.put(switchid, pktlist);
 				}
 				pktlist.add(hspkt);
+				Double bytes_sum = 0.0;
+				for(NetworkPacket p : pktlist)
+					bytes_sum = bytes_sum+p.pkt.data;
+				bytesToDownSwitchSize.put(switchid, bytes_sum);
 			} else// send to up
 			{
 				Switch sw = uplinkswitches.get(0);
@@ -349,6 +364,10 @@ public class Switch extends SimEntity {
 					uplinkswitchpktlist.put(sw.getId(), pktlist);
 				}
 				pktlist.add(hspkt);
+				Double bytes_sum = 0.0;
+				for(NetworkPacket p : pktlist)
+					bytes_sum = bytes_sum+p.pkt.data;
+				bytesToUpSwitchSize.put(sw.getId(), bytes_sum);
 			}
 		}
 		if (level == NetworkConstants.ROOT_LEVEL) {
@@ -374,6 +393,10 @@ public class Switch extends SimEntity {
 					downlinkswitchpktlist.put(aggSwtichid, pktlist);
 				}
 				pktlist.add(hspkt);
+				Double bytes_sum = 0.0;
+				for(NetworkPacket p : pktlist)
+					bytes_sum = bytes_sum+p.pkt.data;
+				bytesToDownSwitchSize.put(aggSwtichid, bytes_sum);
 			}
 		}
 	}
@@ -462,9 +485,7 @@ public class Switch extends SimEntity {
 					double avband = downlinkbandwidth / hspktlist.size();
 					Iterator<NetworkPacket> it = hspktlist.iterator();
 					while (it.hasNext()) {
-						NetworkPacket hspkt = it.next();
-						// hspkt.recieverhostid=tosend;
-						// hs.packetrecieved.add(hspkt);
+						NetworkPacket hspkt = it.next(); 
 						this.send(getId(), hspkt.pkt.data / avband, CloudSimTags.Network_Event_Host, hspkt);
 					}
 					hspktlist.clear();
@@ -536,21 +557,6 @@ public class Switch extends SimEntity {
 	public void shutdownEntity() {
 		Log.printConcatLine(getName(), " is shutting down...");
 	}
-	/**
-	 * Gets an edge switch and calculate all available resources
-	 * @param edgSw A switch of type Edge
-	 */
-	/*private void addRecourcesOf(Switch edgSw){
-		NetworkHost hs;
-		for (Entry<Integer, NetworkHost> es : edgSw.hostlist.entrySet()) {
-			hs = es.getValue();
-			virtual_host_NPes = virtual_host_NPes + hs.getNumberOfFreePes();
-			//EG_ARA = EG_ARA + hs.getStorage();
-			EG_ARA = EG_ARA + hs.getRamProvisioner().getAvailableRam();
-			if(virtual_host_mips < hs.getMaxAvailableMips())
-				virtual_host_mips = hs.getMaxAvailableMips();
-		}
-	}*/
-	
+
 
 }

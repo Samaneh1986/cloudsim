@@ -71,7 +71,8 @@ public class VmAllocationPolicyBestFit extends VmAllocationPolicy {
 	@Override
 	public List<Map<String, Object>> optimizeAllocation(List<? extends Vm> vmList) {
 		// TODO Auto-generated method stub
-		boolean result = false; 
+		boolean result = false;
+		usedHosts.clear();
 		for(Vm vm : vmList){
 			int requiredPes = vm.getNumberOfPes();
 			int min_pes = Integer.MAX_VALUE;

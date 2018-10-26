@@ -45,10 +45,8 @@ public class AggregateSwitch extends Switch {
 		super(name, level, dc);
 		downlinkswitchpktlist = new HashMap<Integer, List<NetworkPacket>>();
 		uplinkswitchpktlist = new HashMap<Integer, List<NetworkPacket>>();
-		//uplinkbandwidth = NetworkConstants.BandWidthAggRoot;
-		//downlinkbandwidth = NetworkConstants.BandWidthEdgeAgg;
-		//latency = NetworkConstants.SwitchingDelayAgg;
-		//numport = NetworkConstants.AggSwitchPort;
+		bytesToUpSwitchSize = new HashMap<Integer,Double>();
+		bytesToDownSwitchSize = new HashMap<Integer,Double>();
 		uplinkswitches = new ArrayList<Switch>();
 		downlinkswitches = new ArrayList<Switch>();
 	}
@@ -76,28 +74,12 @@ public class AggregateSwitch extends Switch {
 				pktlist = new ArrayList<NetworkPacket>();
 				downlinkswitchpktlist.put(switchid, pktlist);
 			}
-			/******
-			 ******  compute the occupied percentage of edgeSwitch up-links by recieving data 
-			 ******   when packets are received from root switch
-			 ******/
-				int index = -1;
-				for(int i =0; i< downlinkswitches.size(); i++ ){
-					if(downlinkswitches.get(i).getId() == switchid){
-						index = i;
-						break;
-					}
-				}
-				double fillPrc = 0.0;
-				for( NetworkPacket p :downlinkswitchpktlist.get(switchid)){
-						fillPrc = fillPrc + p.pkt.data;
-					}
-				fillPrc = 	(fillPrc +(hspkt.pkt.data)) * 8; // convert Byte to Bit
-				fillPrc = 	(fillPrc/this.downlinkswitches.get(index).uplinkbandwidth) * 100;
-				if(fillPrc > 0)
-					this.downlinkswitches.get(index).uplinkSwRcv = fillPrc;
-				/***********************************************************/
 				
 			pktlist.add(hspkt);
+			Double bytes_sum = 0.0;
+			for(NetworkPacket p : pktlist)
+				bytes_sum = bytes_sum+p.pkt.data;
+			bytesToDownSwitchSize.put(switchid, bytes_sum);
 			return;
 		}
 
@@ -136,25 +118,6 @@ public class AggregateSwitch extends Switch {
 					downlinkswitchpktlist.put(switchid, pktlist);
 				}
 
-				/******
-				 ******  compute the occupied percentage of edgeSwitch up-links by recieving data 
-				 ******   when packets are received from another connected edge switch
-				 ******/
-					int index = -1;
-					for(int i =0; i< downlinkswitches.size(); i++ ){
-						if(downlinkswitches.get(i).getId() == switchid){
-							index = i;
-							break;
-						}
-					}
-					double fillPrc = 0.0;
-					for( NetworkPacket p :downlinkswitchpktlist.get(switchid)){
-							fillPrc = fillPrc + p.pkt.data;
-						}
-					fillPrc = 	(fillPrc +(hspkt.pkt.data)) * 8; // convert Byte to Bit
-					fillPrc = 	(fillPrc/this.downlinkswitches.get(index).uplinkbandwidth) * 100;
-					this.downlinkswitches.get(index).uplinkSwRcv = fillPrc;
-					/***********************************************************/
 				pktlist.add(hspkt);
 			} else// send to up (to root switch)
 			{
@@ -166,6 +129,10 @@ public class AggregateSwitch extends Switch {
 					uplinkswitchpktlist.put(sw.getId(), pktlist);
 				}
 				pktlist.add(hspkt);
+				Double bytes_sum = 0.0;
+				for(NetworkPacket p : pktlist)
+					bytes_sum = bytes_sum+p.pkt.data;
+				bytesToUpSwitchSize.put(sw.getId(), bytes_sum);
 			}
 		}
 	}

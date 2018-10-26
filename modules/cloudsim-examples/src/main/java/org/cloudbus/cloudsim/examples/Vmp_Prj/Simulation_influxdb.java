@@ -39,27 +39,30 @@ public class Simulation_influxdb {
 	private static int broker5Id;
 	private static NetDatacenterBroker broker6;
 	private static int broker6Id;
+	private static NetDatacenterBroker broker7;
+	private static int broker7Id;
 	private static Calendar calendar;
-	//private static List<Cloudlet> allClList;
+	// private static List<Cloudlet> allClList;
 
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
 		Log.printLine("Starting project simulation...");
-		
+
 		try {
-			// Initialize the CloudSim library 
-			int num_user = 5;   
+			// Initialize the CloudSim library
+			int num_user = 6;
 			calendar = Calendar.getInstance();
-			boolean trace_flag = false; // mean trace events 
+			boolean trace_flag = false; // mean trace events
 			CloudSim.init(num_user, calendar, trace_flag);
 			DCMngUtility.dcPerformance = new DCPerformance();
-			//String rsltFileName = "Sim_result_"+calendar.getTime().toString();
-			//DCMngUtility.resultFile =  new PrintWriter(rsltFileName);
+			// String rsltFileName ="Sim_result_"+calendar.getTime().toString();
+			// DCMngUtility.performanceFile= new PrintWriter("perform"+calendar.getTime().toString());
+			// DCMngUtility.resultFile = new PrintWriter(rsltFileName);
 			// Create data center
-			//mDc = new ManageDatacenter("Datacenter_001","RANDOM");
-			mDc = new ManageDatacenter("Datacenter_001","TDB");
-			//mDc = new ManageDatacenter("Datacenter_001","GREEDY");
+			 //mDc = new ManageDatacenter("Datacenter_001","RANDOM");
 			//mDc = new ManageDatacenter("Datacenter_001","BFT");
+			// mDc = new ManageDatacenter("Datacenter_001", "GREEDY");
+			 mDc = new ManageDatacenter("Datacenter_001","TDB");
 			NetworkDatacenter datacenter001 = mDc.createDatacenter();
 			// Create Broker
 			NetDatacenterBroker.setLinkDC(datacenter001);
@@ -74,29 +77,33 @@ public class Simulation_influxdb {
 			broker5 = mDc.createBroker("broker_005");
 			broker5Id = broker5.getId();
 			broker6 = mDc.createBroker("broker_006");
-			broker6Id = broker5.getId();
+			broker6Id = broker6.getId();
+			broker7 = mDc.createBroker("broker_007");
+			broker7Id = broker7.getId();
 			// create initial VMs
 			String workingDirectory = System.getProperty("user.dir");
-			InfluxdbWorkload ds = new InfluxdbWorkload(workingDirectory+"/src/main/java/org/cloudbus/cloudsim/examples/Vmp_Prj/jsonDS/dataSet1.json");
+			InfluxdbWorkload ds = new InfluxdbWorkload(
+					workingDirectory + "/src/main/java/org/cloudbus/cloudsim/examples/Vmp_Prj/jsonDS/dataSet2.json");
 			appList = ds.createWorkload(broker1Id);
-			Map<Integer, List<NetworkVm>> vmlistReq = ds.createVMs(broker1Id,appList);
-			// assign VMs to broker related variable
-			for(int appId : vmlistReq.keySet()) {
-				List<NetworkVm> vmlist = vmlistReq.get(appId);
-				broker1.CreateCustomVMs(datacenter001.getId(),vmlist);
-			}
-			// create initial cloudletApp 
-			broker1.getAppCloudletList().addAll(appList); 
 			
+			Map<Integer, List<NetworkVm>> vmlistReq = ds.createVMs(broker1Id, appList);
+			// assign VMs to broker related variable
+			for (int appId : vmlistReq.keySet()) {
+				List<NetworkVm> vmlist = vmlistReq.get(appId);
+				broker1.CreateCustomVMs(datacenter001.getId(), vmlist);
+			}
+			// create initial cloudletApp
+			broker1.getAppCloudletList().addAll(appList);
+
 			// dynamically add workload user 2
 
 			Runnable user2 = new Runnable() {
 				@Override
-				public void run() { 
-					
-					CloudSim.pauseSimulation(200);
+				public void run() {
+
+					CloudSim.pauseSimulation(100);
 					while (true) {
-						if (CloudSim.isPaused() && CloudSim.clock()< 300 ) {
+						if (CloudSim.isPaused() && CloudSim.clock() < 110) {
 							break;
 						}
 						try {
@@ -104,261 +111,430 @@ public class Simulation_influxdb {
 						} catch (InterruptedException e) {
 							e.printStackTrace();
 						}
-					} 
+					}
 
 					try {
 						Thread.sleep(500);
 					} catch (InterruptedException e) {
-						e.printStackTrace();}
-					
-				    Log.printLine(CloudSim.clock() + "<<<<<--- New Workload Added --->>>>>");
-				    InfluxdbWorkload ds2 = new InfluxdbWorkload(workingDirectory+"/src/main/java/org/cloudbus/cloudsim/examples/Vmp_Prj/jsonDS/dataSet3.json");
-				    List<AppCloudlet>  applist2 = ds2.createWorkload(broker2Id);
-				    Map<Integer, List<NetworkVm>> vmlistReq2 = ds2.createVMs(broker2Id,applist2);
-				    for(int appId : vmlistReq2.keySet()) {
-				    	List<NetworkVm> vmlist2 = vmlistReq2.get(appId);
-						broker2.CreateCustomVMs(datacenter001.getId(),vmlist2);
-				    }
-					broker2.getAppCloudletList().addAll(applist2);
-					broker2.schedule(broker2Id, 0, CloudSimTags.RESOURCE_CHARACTERISTICS_REQUEST);
-					Log.printLine(CloudSim.clock() + "<<<<<--- user 1 workload sent --->>>>>");
-					
-					CloudSim.resumeSimulation();
-					CloudSim.pauseSimulation(800); // time to run user3 thread 
-				}
-			};
-			
-			// dynamically add workload user 3
+						e.printStackTrace();
+					}
 
-						Runnable user3 = new Runnable() {
-							@Override
-							public void run() { 
-								 
-								while (true) {
-									if (CloudSim.isPaused() && CloudSim.clock()>700 ) {
-										break;
-									}
+					Log.printLine(CloudSim.clock() + "<<<<<--- New Workload Added --->>>>>");
+					InfluxdbWorkload ds2 = new InfluxdbWorkload(workingDirectory
+							+ "/src/main/java/org/cloudbus/cloudsim/examples/Vmp_Prj/jsonDS/dataSet1.json");
+					List<AppCloudlet> applist2 = ds2.createWorkload(broker2Id);
+					Map<Integer, List<NetworkVm>> vmlistReq2 = ds2.createVMs(broker2Id, applist2);
+					long pauseTime=120;
+					//for (int appId : vmlistReq2.keySet()) {
+					for(int appIndex=0; appIndex<applist2.size(); appIndex++ ){
+						int appId = applist2.get(appIndex).appID;
+						List<NetworkVm> vmlist2 = vmlistReq2.get(appId);
+						broker2.CreateCustomVMs(datacenter001.getId(), vmlist2);
+						broker2.getAppCloudletList().add(applist2.get(appIndex));
+						broker2.schedule(broker2Id, 0, CloudSimTags.RESOURCE_CHARACTERISTICS_REQUEST);
+						Log.printLine(CloudSim.clock() + "<<<<<--- user 2 workload sent --->>>>>");
+						CloudSim.resumeSimulation();
+						if(appIndex < (applist2.size()-1)){
+							CloudSim.pauseSimulation(pauseTime);
+							while (true) {
+							//	System.out.println("next paus time is "+pauseTime+" cur time:"+CloudSim.clock());
+									if (CloudSim.isPaused() && CloudSim.clock() < 1200) {
+									break;
+								}
 									try {
 										Thread.sleep(100);
 									} catch (InterruptedException e) {
 										e.printStackTrace();
 									}
-								} 
-
-								try {
-									Thread.sleep(500);
-								} catch (InterruptedException e) {
-									e.printStackTrace();}
-								
-							    Log.printLine(CloudSim.clock() +"<<<<<--- New Workload Added --->>>>>");
-							    InfluxdbWorkload ds3 = new InfluxdbWorkload(workingDirectory+"/src/main/java/org/cloudbus/cloudsim/examples/Vmp_Prj/jsonDS/dataSet2.json");
-							    List<AppCloudlet>  applist3 = ds3.createWorkload(broker3Id);
-							    Map<Integer, List<NetworkVm>> vmlistReq3 = ds3.createVMs(broker3Id,applist3);
-							    for(int appId : vmlistReq3.keySet()) {
-							    	List<NetworkVm> vmlist3 = vmlistReq3.get(appId);
-									broker3.CreateCustomVMs(datacenter001.getId(),vmlist3);
-							    }
-								broker3.getAppCloudletList().addAll(applist3);
-								broker3.schedule(broker3Id, 0, CloudSimTags.RESOURCE_CHARACTERISTICS_REQUEST);
-								Log.printLine(CloudSim.clock() + "<<<<<--- user 2 workload sent --->>>>>");
-								
-								CloudSim.resumeSimulation();
-								CloudSim.pauseSimulation(1200); // time to run user4 thread 
 							}
-						};
+						}
+						pauseTime=pauseTime+50;
+					}
+					CloudSim.pauseSimulation(1050); // time to run user3 thread
+				}
+			};
 
-						// dynamically add workload user 4
+			// dynamically add workload user 3
 
-									Runnable user4 = new Runnable() {
-										@Override
-										public void run() {  
-											 
-											while (true) {
-												if (CloudSim.isPaused() && CloudSim.clock()>1100 ) {
-													break;
-												}
-												try {
-													Thread.sleep(100);
-												} catch (InterruptedException e) {
-													e.printStackTrace();
-												}
-											} 
+			Runnable user3 = new Runnable() {
+				@Override
+				public void run() {
 
-											try {
-												Thread.sleep(500);
-											} catch (InterruptedException e) {
-												e.printStackTrace();}
-											
-										    Log.printLine(CloudSim.clock() +"<<<<<--- New Workload Added --->>>>>");
-										    InfluxdbWorkload ds4 = new InfluxdbWorkload(workingDirectory+"/src/main/java/org/cloudbus/cloudsim/examples/Vmp_Prj/jsonDS/dataSet1.json");
-										    List<AppCloudlet>  applist4 = ds4.createWorkload(broker4Id);
-										    Map<Integer, List<NetworkVm>> vmlistReq4 = ds4.createVMs(broker4Id,applist4);
-										    for(int appId : vmlistReq4.keySet()) {
-										    	List<NetworkVm> vmlist4 = vmlistReq4.get(appId);
-												broker4.CreateCustomVMs(datacenter001.getId(),vmlist4);
-											}
+					while (true) {
+						if (CloudSim.isPaused() && CloudSim.clock() > 1020) {
+							break;
+						}
+						try {
+							Thread.sleep(100);
+						} catch (InterruptedException e) {
+							e.printStackTrace();
+						}
+					}
 
-											broker4.getAppCloudletList().addAll(applist4);
-											broker4.schedule(broker4Id, 0, CloudSimTags.RESOURCE_CHARACTERISTICS_REQUEST);
-											Log.printLine(CloudSim.clock() + "<<<<<--- user 4 workload sent --->>>>>");
-											
-											CloudSim.resumeSimulation(); 
-											CloudSim.pauseSimulation(1450); // time to run user5 thread 
-										}
-									};
-					// dynamically add workload user 5
+					try {
+						Thread.sleep(500);
+					} catch (InterruptedException e) {
+						e.printStackTrace();
+					}
 
-									Runnable user5 = new Runnable() {
-										@Override
-										public void run() {  
-											 
-											while (true) {
-												if (CloudSim.isPaused() && CloudSim.clock()>1400 ) {
-													break;
-												}
-												try {
-													Thread.sleep(100);
-												} catch (InterruptedException e) {
-													e.printStackTrace();
-												}
-											} 
+					Log.printLine(CloudSim.clock() + "<<<<<--- New Workload Added --->>>>>");
+					InfluxdbWorkload ds3 = new InfluxdbWorkload(workingDirectory
+							+ "/src/main/java/org/cloudbus/cloudsim/examples/Vmp_Prj/jsonDS/dataSet3.json");
+					List<AppCloudlet> applist3 = ds3.createWorkload(broker3Id);
+					Map<Integer, List<NetworkVm>> vmlistReq3 = ds3.createVMs(broker3Id, applist3);
+					//for (int appId : vmlistReq3.keySet()) {
+					long pauseTime=1070;
+					for(int appIndex=0; appIndex<applist3.size(); appIndex++ ){
+						int appId = applist3.get(appIndex).appID;
+						List<NetworkVm> vmlist3 = vmlistReq3.get(appId);
+						broker3.CreateCustomVMs(datacenter001.getId(), vmlist3);
+						broker3.getAppCloudletList().add(applist3.get(appIndex));
+						broker3.schedule(broker3Id, 0, CloudSimTags.RESOURCE_CHARACTERISTICS_REQUEST);
+						Log.printLine(CloudSim.clock() + "<<<<<--- user 3 workload sent --->>>>>");
+						CloudSim.resumeSimulation();
+						if(appIndex < (applist3.size()-1)){
+							CloudSim.pauseSimulation(pauseTime);
+							while (true) {
+							//	System.out.println("next paus time is "+pauseTime+" cur time:"+CloudSim.clock());
+									if (CloudSim.isPaused() && CloudSim.clock() < 2100) {
+									break;
+								}
+									try {
+										Thread.sleep(100);
+									} catch (InterruptedException e) {
+										e.printStackTrace();
+									}
+							}
+						}
+						pauseTime=pauseTime+50;
+					}
+					CloudSim.pauseSimulation(2150); // time to run user4 thread
+				}
+			};
 
-											try {
-												Thread.sleep(500);
-											} catch (InterruptedException e) {
-												e.printStackTrace();}
-											
-										    Log.printLine(CloudSim.clock() +"<<<<<--- New Workload Added --->>>>>");
-										    InfluxdbWorkload ds5 = new InfluxdbWorkload(workingDirectory+"/src/main/java/org/cloudbus/cloudsim/examples/Vmp_Prj/jsonDS/dataSet3.json");
-										    List<AppCloudlet>  applist5 = ds5.createWorkload(broker5Id);
-										    Map<Integer, List<NetworkVm>> vmlistReq5 = ds5.createVMs(broker5Id,applist5);
-										    for(int appId : vmlistReq5.keySet()) {
-										    	List<NetworkVm> vmlist5 = vmlistReq5.get(appId);
-										    	broker5.CreateCustomVMs(datacenter001.getId(),vmlist5);
-										    }
-											broker5.getAppCloudletList().addAll(applist5);
-											broker5.schedule(broker5Id, 0, CloudSimTags.RESOURCE_CHARACTERISTICS_REQUEST);
-											Log.printLine(CloudSim.clock() + "<<<<<--- user 5 workload sent --->>>>>");
-											
-											CloudSim.resumeSimulation(); 
-											CloudSim.pauseSimulation(1550); // time to run user6 thread 
-										}
-									};
-									// dynamically add workload user 6
+			// dynamically add workload user 4
 
-									Runnable user6 = new Runnable() {
-										@Override
-										public void run() {  
-											 
-											while (true) {
-												if (CloudSim.isPaused() && CloudSim.clock()>1500 ) {
-													break;
-												}
-												try {
-													Thread.sleep(100);
-												} catch (InterruptedException e) {
-													e.printStackTrace();
-												}
-											} 
+			Runnable user4 = new Runnable() {
+				@Override
+				public void run() {
 
-											try {
-												Thread.sleep(500);
-											} catch (InterruptedException e) {
-												e.printStackTrace();}
-											
-										    Log.printLine(CloudSim.clock() +"<<<<<--- New Workload Added --->>>>>");
-										    InfluxdbWorkload ds6 = new InfluxdbWorkload(workingDirectory+"/src/main/java/org/cloudbus/cloudsim/examples/Vmp_Prj/jsonDS/dataSet2.json");
-										    List<AppCloudlet>  applist6 = ds6.createWorkload(broker6Id);
-										    Map<Integer, List<NetworkVm>> vmlistReq6 = ds6.createVMs(broker6Id,applist6);
-										    for(int appId : vmlistReq6.keySet()) {
-										    	List<NetworkVm> vmlist6 = vmlistReq6.get(appId);
-										    	broker6.CreateCustomVMs(datacenter001.getId(),vmlist6);
-										    }
-											broker6.getAppCloudletList().addAll(applist6);
-											broker6.schedule(broker6Id, 0, CloudSimTags.RESOURCE_CHARACTERISTICS_REQUEST);
-											Log.printLine(CloudSim.clock() + "<<<<<--- user 5 workload sent --->>>>>");
-											
-											CloudSim.resumeSimulation(); 
-										}
-									};
-									
-	    
-		new Thread(user2).start();
-			
+					while (true) {
+						if (CloudSim.isPaused() && CloudSim.clock() > 2120) {
+							break;
+						}
+						try {
+							Thread.sleep(100);
+						} catch (InterruptedException e) {
+							e.printStackTrace();
+						}
+					}
+
+					try {
+						Thread.sleep(500);
+					} catch (InterruptedException e) {
+						e.printStackTrace();
+					}
+
+					Log.printLine(CloudSim.clock() + "<<<<<--- New Workload Added --->>>>>");
+					InfluxdbWorkload ds4 = new InfluxdbWorkload(workingDirectory
+							+ "/src/main/java/org/cloudbus/cloudsim/examples/Vmp_Prj/jsonDS/dataSet_hbase.json");
+					List<AppCloudlet> applist4 = ds4.createWorkload(broker4Id);
+					Map<Integer, List<NetworkVm>> vmlistReq4 = ds4.createVMs(broker4Id, applist4);
+					long pauseTime=2170;
+					//for (int appId : vmlistReq4.keySet()) {
+					for(int appIndex=0; appIndex<applist4.size(); appIndex++ ){
+						int appId = applist4.get(appIndex).appID;
+						List<NetworkVm> vmlist4 = vmlistReq4.get(appId);
+						broker4.CreateCustomVMs(datacenter001.getId(), vmlist4);
+						broker4.getAppCloudletList().add(applist4.get(appIndex));
+						broker4.schedule(broker4Id, 0, CloudSimTags.RESOURCE_CHARACTERISTICS_REQUEST);
+						Log.printLine(CloudSim.clock() + "<<<<<--- user 4 workload sent --->>>>>");
+						CloudSim.resumeSimulation();
+						if(appIndex < (applist4.size()-1)){
+							CloudSim.pauseSimulation(pauseTime);
+							while (true) {
+							//	System.out.println("next paus time is "+pauseTime+" cur time:"+CloudSim.clock());
+									if (CloudSim.isPaused() && CloudSim.clock() < 3080) {
+									break;
+								}
+									try {
+										Thread.sleep(100);
+									} catch (InterruptedException e) {
+										e.printStackTrace();
+									}
+							}
+						}
+						pauseTime=pauseTime+50;
+
+
+					}
+
+					CloudSim.pauseSimulation(3100); // time to run user5 thread
+				}
+			};
+			// dynamically add workload user 5
+
+			Runnable user5 = new Runnable() {
+				@Override
+				public void run() {
+
+					while (true) {
+						if (CloudSim.isPaused() && CloudSim.clock() > 3080) {
+							break;
+						}
+						try {
+							Thread.sleep(100);
+						} catch (InterruptedException e) {
+							e.printStackTrace();
+						}
+					}
+
+					try {
+						Thread.sleep(500);
+					} catch (InterruptedException e) {
+						e.printStackTrace();
+					}
+
+					Log.printLine(CloudSim.clock() + "<<<<<--- New Workload Added --->>>>>");
+					InfluxdbWorkload ds5 = new InfluxdbWorkload(workingDirectory
+							+ "/src/main/java/org/cloudbus/cloudsim/examples/Vmp_Prj/jsonDS/dataSet3.json");
+					List<AppCloudlet> applist5 = ds5.createWorkload(broker5Id);
+					Map<Integer, List<NetworkVm>> vmlistReq5 = ds5.createVMs(broker5Id, applist5);
+					long pauseTime=3120;
+					//for (int appId : vmlistReq5.keySet()) {
+					for(int appIndex=0; appIndex<applist5.size(); appIndex++ ){
+						int appId = applist5.get(appIndex).appID;
+						List<NetworkVm> vmlist5 = vmlistReq5.get(appId);
+						broker5.CreateCustomVMs(datacenter001.getId(), vmlist5);
+						broker5.getAppCloudletList().add(applist5.get(appIndex));
+						broker5.schedule(broker5Id, 0, CloudSimTags.RESOURCE_CHARACTERISTICS_REQUEST);
+						Log.printLine(CloudSim.clock() + "<<<<<--- user 5 workload sent --->>>>>");
+						CloudSim.resumeSimulation();
+						if(appIndex < (applist5.size()-1)){
+							CloudSim.pauseSimulation(pauseTime);
+							while (true) {
+							//	System.out.println("next paus time is "+pauseTime+" cur time:"+CloudSim.clock());
+									if (CloudSim.isPaused() && CloudSim.clock() < 4200) {
+									break;
+								}
+									try {
+										Thread.sleep(100);
+									} catch (InterruptedException e) {
+										e.printStackTrace();
+									}
+							}
+						}
+						pauseTime=pauseTime+50;
+
+					}
+					CloudSim.pauseSimulation(4250); // time to run user6 thread
+				}
+			};
+			// dynamically add workload user 6
+
+			Runnable user6 = new Runnable() {
+				@Override
+				public void run() {
+
+					while (true) {
+						if (CloudSim.isPaused() && CloudSim.clock() > 4220) {
+							break;
+						}
+						try {
+							Thread.sleep(100);
+						} catch (InterruptedException e) {
+							e.printStackTrace();
+						}
+					}
+
+					try {
+						Thread.sleep(500);
+					} catch (InterruptedException e) {
+						e.printStackTrace();
+					}
+
+					Log.printLine(CloudSim.clock() + "<<<<<--- New Workload Added --->>>>>");
+					InfluxdbWorkload ds6 = new InfluxdbWorkload(workingDirectory
+							+ "/src/main/java/org/cloudbus/cloudsim/examples/Vmp_Prj/jsonDS/dataSet_swim.json");
+					List<AppCloudlet> applist6 = ds6.createWorkload(broker6Id); 
+					Map<Integer, List<NetworkVm>> vmlistReq6 = ds6.createVMs(broker6Id, applist6);
+					long pauseTime=4270;
+					//for (int appId : vmlistReq6.keySet()) {
+					for(int appIndex=0; appIndex<applist6.size(); appIndex++ ){
+						int appId = applist6.get(appIndex).appID;
+						List<NetworkVm> vmlist6 = vmlistReq6.get(appId);
+						broker6.CreateCustomVMs(datacenter001.getId(), vmlist6);
+						broker6.getAppCloudletList().add(applist6.get(appIndex));
+						broker6.schedule(broker6Id, 0, CloudSimTags.RESOURCE_CHARACTERISTICS_REQUEST);
+						Log.printLine(CloudSim.clock() + "<<<<<--- user 6 workload sent --->>>>>");
+						CloudSim.resumeSimulation();
+						if(appIndex < (applist6.size()-1)){
+							CloudSim.pauseSimulation(pauseTime);
+							while (true) {
+								//System.out.println("next paus time is "+pauseTime+" cur time:"+CloudSim.clock());
+									if (CloudSim.isPaused() && CloudSim.clock() < 5750) {
+									break;
+								}
+									try {
+										Thread.sleep(100);
+									} catch (InterruptedException e) {
+										e.printStackTrace();
+									}
+							}
+						}
+						pauseTime=pauseTime+50; 
+					}
+					CloudSim.pauseSimulation(5800); // time to run user7 thread
+				}
+			};
+
+			Runnable user7 = new Runnable() {
+				@Override
+				public void run() {
+
+					while (true) {
+						if (CloudSim.isPaused() && CloudSim.clock() > 5770) {
+							break;
+						}
+						try {
+							Thread.sleep(100);
+						} catch (InterruptedException e) {
+							e.printStackTrace();
+						}
+					}
+
+					try {
+						Thread.sleep(500);
+					} catch (InterruptedException e) {
+						e.printStackTrace();
+					}
+
+					Log.printLine(CloudSim.clock() + "<<<<<--- New Workload Added --->>>>>");
+					InfluxdbWorkload ds7 = new InfluxdbWorkload(workingDirectory
+							+ "/src/main/java/org/cloudbus/cloudsim/examples/Vmp_Prj/jsonDS/dataSet3.json");
+					List<AppCloudlet> applist7 = ds7.createWorkload(broker7Id); 
+					Map<Integer, List<NetworkVm>> vmlistReq7 = ds7.createVMs(broker7Id, applist7);
+					long pauseTime=5850;
+					//for (int appId : vmlistReq6.keySet()) {
+					for(int appIndex=0; appIndex<applist7.size(); appIndex++ ){
+						int appId = applist7.get(appIndex).appID;
+						List<NetworkVm> vmlist7 = vmlistReq7.get(appId);
+						broker7.CreateCustomVMs(datacenter001.getId(), vmlist7);
+						broker7.getAppCloudletList().add(applist7.get(appIndex));
+						broker7.schedule(broker7Id, 0, CloudSimTags.RESOURCE_CHARACTERISTICS_REQUEST);
+						Log.printLine(CloudSim.clock() + "<<<<<--- user 7 workload sent --->>>>>");
+						CloudSim.resumeSimulation();
+						if(appIndex < (applist7.size()-1)){
+							CloudSim.pauseSimulation(pauseTime);
+							while (true) {
+								//System.out.println("next paus time is "+pauseTime+" cur time:"+CloudSim.clock());
+									if (CloudSim.isPaused() && CloudSim.clock() < 10000) {
+									break;
+								}
+									try {
+										Thread.sleep(100);
+									} catch (InterruptedException e) {
+										e.printStackTrace();
+									}
+							}
+						}
+						pauseTime=pauseTime+50; 
+					}
+				}
+			};
+
+			new Thread(user2).start();
+
 			try {
 				Thread.sleep(100);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
-		
+
 			new Thread(user3).start();
 			try {
 				Thread.sleep(100);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
-		
-		new Thread(user4).start();
-		try {
-			Thread.sleep(100);
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-		}
-		
-		new Thread(user5).start();
-		try {
-			Thread.sleep(100);
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-		}
-		
-		new Thread(user6).start(); 
-			// Starts the simulation
-			//DCMngUtility.resultFile.println("Simulation started at "+calendar.getTime().toString());
-			//DCMngUtility.resultFile.println("CloudSim clock is "+CloudSim.clock());
-			
-			CloudSim.startSimulation();
-			
-			List<Cloudlet> newList = broker1.getCloudletSubmittedList();
-			
-			CloudSim.stopSimulation();
 
-			newList.addAll( broker2.getCloudletSubmittedList());
-			newList.addAll( broker3.getCloudletSubmittedList());
-			newList.addAll( broker4.getCloudletSubmittedList());
-			newList.addAll( broker5.getCloudletSubmittedList());
-			newList.addAll( broker6.getCloudletSubmittedList());
+			new Thread(user4).start();
+			try {
+				Thread.sleep(100);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+
+			new Thread(user5).start();
+			try {
+				Thread.sleep(100);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+
+			new Thread(user6).start();
+			try {
+				Thread.sleep(100);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+
+			new Thread(user7).start();
+			// Starts the simulation
+			// DCMngUtility.resultFile.println("Simulation started at
+			// "+calendar.getTime().toString());
+			// DCMngUtility.resultFile.println("CloudSim clock is
+			// "+CloudSim.clock());
+
+			CloudSim.startSimulation();
+
+			List<Cloudlet> newList = broker1.getCloudletSubmittedList();
+
+			CloudSim.stopSimulation();
+			
+			//DCMngUtility.resultFile.close();
+			//DCMngUtility.performanceFile.close();
+			
+			newList.addAll(broker2.getCloudletSubmittedList());
+			newList.addAll(broker3.getCloudletSubmittedList());
+			newList.addAll(broker4.getCloudletSubmittedList());
+			newList.addAll(broker5.getCloudletSubmittedList());
+			newList.addAll(broker6.getCloudletSubmittedList());
+			newList.addAll(broker7.getCloudletSubmittedList());
 
 			// Print results when simulation is over
 			printCloudletList(newList);
-			System.out.println("numberofcloudlet " + newList.size() + " Cached "
-					+ NetDatacenterBroker.cachedcloudlet + " Data transfered "
-					+ NetworkConstants.totaldatatransfer + " during Time "+NetworkConstants.totaldatatransferTime);
-			System.out.println("Inter Racks Data transfered amount is "+NetworkConstants.interRackDataTransfer);
-		//	System.out.println(" ** HOSTS INFORMATION ** ");
+			
+			System.out.println("numberofcloudlet " + newList.size() + " Cached " + NetDatacenterBroker.cachedcloudlet
+					+ " Data transfered " + NetworkConstants.totaldatatransfer + " during Time (ms)"
+					+ NetworkConstants.totaldatatransferTime);
+			System.out.println("Inter Racks Data transfered amount is " + NetworkConstants.interRackDataTransfer);
+			// System.out.println(" ** HOSTS INFORMATION ** ");
 			int totUsdHst = 0;
 			int allHst = 0;
 			double usagemean = 0.0;
-			for(Host hs :datacenter001.getHostList()){
-				 NetworkHost nvh =  (NetworkHost) hs;
-				 if(nvh.getUtilizedCpu() != 0){
-				//	 System.out.println("Host Id"+nvh.getId()+" -> used cpu prc:" +(1-nvh.getUnusedCpu())+" , mean usage: "+nvh.getUtilizedCpu());
-					 totUsdHst++;
-					 usagemean = usagemean + (1- nvh.getUnusedCpu());
-				 } 
+			for (Host hs : datacenter001.getHostList()) {
+				NetworkHost nvh = (NetworkHost) hs;
+				if (nvh.getUtilizedCpu() != 0) {
+					// System.out.println("Host Id"+nvh.getId()+" -> used cpu
+					// prc:" +(1-nvh.getUnusedCpu())+" , mean usage:
+					// "+nvh.getUtilizedCpu());
+					totUsdHst++;
+					usagemean = usagemean + (1 - nvh.getUnusedCpu());
+				}
 				allHst++;
-				 }
+			}
 			usagemean = usagemean / totUsdHst;
-			System.out.println("Total "+totUsdHst+" hosts from "+allHst+" availbles hosts is used with mean prodactivity "+usagemean);
+			System.out.println("Total " + totUsdHst + " hosts from " + allHst
+					+ " availbles hosts is used with mean prodactivity " + usagemean+", ALK:"+DCMngUtility.max_alk+","+DCMngUtility.min_alk);
 			DCMngUtility.dcPerformance.switchReport();
 			DCMngUtility.dcPerformance.hostReport();
-			
+
 			Log.printLine("Project simulation finished!");
-		}
-	    catch (Exception e) {
+		} catch (Exception e) {
 			e.printStackTrace();
 			Log.printLine("Unwanted errors happen!!");
-	    }
+		}
 	}
 	
 	
