@@ -91,6 +91,7 @@ public class VmAllocationPolicyBestFit extends VmAllocationPolicy {
 					}
 				}
 			}
+			if(selectedHost != null){
 			result = selectedHost.vmCreate(vm);
 			getVmTable().put(vm.getUid(), selectedHost);
 			if(usedHosts.get(String.valueOf(vm.getUserId())) != null){
@@ -100,13 +101,23 @@ public class VmAllocationPolicyBestFit extends VmAllocationPolicy {
 				usedHosts.put(String.valueOf(vm.getUserId()), new ArrayList<String>());
 				usedHosts.get(String.valueOf(vm.getUserId())).add( String.valueOf(selectedHost.getId()));
 			}
+			}
+			else{
+				result = false;
+				break;
+			}
 		}
 		Map<String, Object> finalCnd =  new HashMap<String, Object>();
 		List<Map<String, Object>> finalResult = new ArrayList<Map<String, Object>>();
 		if(result == true)
 			finalCnd.put("OK","SUCCESS");
-		else
+		else{
+			for(Vm vm : vmList){
+				if(vm.getHost() != null)
+					vm.getHost().vmDestroy(vm);
+			}
 			finalCnd.put("ER","FAILED");
+		}
 		finalResult.add(finalCnd);
 		return finalResult;
 	}

@@ -15,19 +15,19 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
-public class InfluxdbDataset {
+public class JsonDataset {
 	private String datasetPath;
 	
 	//dataset variables ....
 	public String appId;
 	public String cloudletId;
 	public long length;
-	public long fileSize;
-	public long outputSize;
+	public long fileSize; // initial input read size in MB
+	public long outputSize;// final output write size in MB
 	public long memory;
 	public int pesNumber;
 	public String stageTyp;
-	public int satageNo;
+//	public int satageNo;
 	public double data_transfered;
 	public int rcv_clId;
 	public long exec_time;
@@ -37,7 +37,7 @@ public class InfluxdbDataset {
 	private Iterator<String> datasetKeys;
 	private List sortedKeySet;
 	
-	InfluxdbDataset(String datasetPathInput){
+	JsonDataset(String datasetPathInput){
 		this.datasetPath = datasetPathInput;
 		
 	//	openFile statements here .....
@@ -86,7 +86,7 @@ public class InfluxdbDataset {
 			}
 			this.stageTyp = String.valueOf(row.get("typ"));
 			//System.out.println(key+":"+key.charAt(6));
-			this.satageNo = Integer.valueOf(String.valueOf(key.charAt(6))).intValue();
+			//this.satageNo = Integer.valueOf(String.valueOf(key.charAt(6))).intValue();
 			this.rcv_clId = Integer.valueOf(String.valueOf(row.get("rcv_clId"))).intValue();
 			double data = Double.valueOf(String.valueOf(row.get("data"))).doubleValue()/1000000;//in MB
 			this.data_transfered = data;
@@ -111,7 +111,7 @@ public class InfluxdbDataset {
 		memory= 0;
 		pesNumber= 0;
 		stageTyp= null;
-		satageNo= 0;
+		//satageNo= 0;
 		data_transfered= 0;
 		rcv_clId= 0;
 		exec_time= 0;

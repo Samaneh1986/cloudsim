@@ -23,10 +23,11 @@ import org.cloudbus.cloudsim.network.exDatacenter.NetworkDatacenter;
 import org.cloudbus.cloudsim.network.exDatacenter.NetworkHost;
 import org.cloudbus.cloudsim.network.exDatacenter.NetworkVm;
 
-public class Simulation_influxdb {
+public class Simulation_Json {
 	//private static Map<Integer, List<NetworkVm>> vmlistReq; 
 	private static List<AppCloudlet> appList;
 	private static ManageDatacenter mDc ;
+	//private static ManageSpineLeafDatacenter mDc ;
 	private static NetDatacenterBroker broker1;
 	private static int broker1Id;
 	private static NetDatacenterBroker broker2;
@@ -61,8 +62,12 @@ public class Simulation_influxdb {
 			// Create data center
 			 //mDc = new ManageDatacenter("Datacenter_001","RANDOM");
 			//mDc = new ManageDatacenter("Datacenter_001","BFT");
-			// mDc = new ManageDatacenter("Datacenter_001", "GREEDY");
-			 mDc = new ManageDatacenter("Datacenter_001","TDB");
+			 mDc = new ManageDatacenter("Datacenter_001", "GREEDY");
+			 // mDc = new ManageDatacenter("Datacenter_001","TDB");
+			
+			 //mDc = new ManageSpineLeafDatacenter("Datacenter_001","GREEDY");
+			// mDc = new ManageSpineLeafDatacenter("Datacenter_001","TDB");
+			 
 			NetworkDatacenter datacenter001 = mDc.createDatacenter();
 			// Create Broker
 			NetDatacenterBroker.setLinkDC(datacenter001);
@@ -82,7 +87,7 @@ public class Simulation_influxdb {
 			broker7Id = broker7.getId();
 			// create initial VMs
 			String workingDirectory = System.getProperty("user.dir");
-			InfluxdbWorkload ds = new InfluxdbWorkload(
+			JsonWorkloadGenerator ds = new JsonWorkloadGenerator(
 					workingDirectory + "/src/main/java/org/cloudbus/cloudsim/examples/Vmp_Prj/jsonDS/dataSet2.json");
 			appList = ds.createWorkload(broker1Id);
 			
@@ -120,7 +125,7 @@ public class Simulation_influxdb {
 					}
 
 					Log.printLine(CloudSim.clock() + "<<<<<--- New Workload Added --->>>>>");
-					InfluxdbWorkload ds2 = new InfluxdbWorkload(workingDirectory
+					JsonWorkloadGenerator ds2 = new JsonWorkloadGenerator(workingDirectory
 							+ "/src/main/java/org/cloudbus/cloudsim/examples/Vmp_Prj/jsonDS/dataSet1.json");
 					List<AppCloudlet> applist2 = ds2.createWorkload(broker2Id);
 					Map<Integer, List<NetworkVm>> vmlistReq2 = ds2.createVMs(broker2Id, applist2);
@@ -178,7 +183,7 @@ public class Simulation_influxdb {
 					}
 
 					Log.printLine(CloudSim.clock() + "<<<<<--- New Workload Added --->>>>>");
-					InfluxdbWorkload ds3 = new InfluxdbWorkload(workingDirectory
+					JsonWorkloadGenerator ds3 = new JsonWorkloadGenerator(workingDirectory
 							+ "/src/main/java/org/cloudbus/cloudsim/examples/Vmp_Prj/jsonDS/dataSet3.json");
 					List<AppCloudlet> applist3 = ds3.createWorkload(broker3Id);
 					Map<Integer, List<NetworkVm>> vmlistReq3 = ds3.createVMs(broker3Id, applist3);
@@ -236,7 +241,7 @@ public class Simulation_influxdb {
 					}
 
 					Log.printLine(CloudSim.clock() + "<<<<<--- New Workload Added --->>>>>");
-					InfluxdbWorkload ds4 = new InfluxdbWorkload(workingDirectory
+					JsonWorkloadGenerator ds4 = new JsonWorkloadGenerator(workingDirectory
 							+ "/src/main/java/org/cloudbus/cloudsim/examples/Vmp_Prj/jsonDS/dataSet_hbase.json");
 					List<AppCloudlet> applist4 = ds4.createWorkload(broker4Id);
 					Map<Integer, List<NetworkVm>> vmlistReq4 = ds4.createVMs(broker4Id, applist4);
@@ -296,7 +301,7 @@ public class Simulation_influxdb {
 					}
 
 					Log.printLine(CloudSim.clock() + "<<<<<--- New Workload Added --->>>>>");
-					InfluxdbWorkload ds5 = new InfluxdbWorkload(workingDirectory
+					JsonWorkloadGenerator ds5 = new JsonWorkloadGenerator(workingDirectory
 							+ "/src/main/java/org/cloudbus/cloudsim/examples/Vmp_Prj/jsonDS/dataSet3.json");
 					List<AppCloudlet> applist5 = ds5.createWorkload(broker5Id);
 					Map<Integer, List<NetworkVm>> vmlistReq5 = ds5.createVMs(broker5Id, applist5);
@@ -327,7 +332,7 @@ public class Simulation_influxdb {
 						pauseTime=pauseTime+50;
 
 					}
-					CloudSim.pauseSimulation(4250); // time to run user6 thread
+			//		CloudSim.pauseSimulation(4250); // time to run user6 thread
 				}
 			};
 			// dynamically add workload user 6
@@ -354,7 +359,7 @@ public class Simulation_influxdb {
 					}
 
 					Log.printLine(CloudSim.clock() + "<<<<<--- New Workload Added --->>>>>");
-					InfluxdbWorkload ds6 = new InfluxdbWorkload(workingDirectory
+					JsonWorkloadGenerator ds6 = new JsonWorkloadGenerator(workingDirectory
 							+ "/src/main/java/org/cloudbus/cloudsim/examples/Vmp_Prj/jsonDS/dataSet_swim.json");
 					List<AppCloudlet> applist6 = ds6.createWorkload(broker6Id); 
 					Map<Integer, List<NetworkVm>> vmlistReq6 = ds6.createVMs(broker6Id, applist6);
@@ -410,7 +415,7 @@ public class Simulation_influxdb {
 					}
 
 					Log.printLine(CloudSim.clock() + "<<<<<--- New Workload Added --->>>>>");
-					InfluxdbWorkload ds7 = new InfluxdbWorkload(workingDirectory
+					JsonWorkloadGenerator ds7 = new JsonWorkloadGenerator(workingDirectory
 							+ "/src/main/java/org/cloudbus/cloudsim/examples/Vmp_Prj/jsonDS/dataSet3.json");
 					List<AppCloudlet> applist7 = ds7.createWorkload(broker7Id); 
 					Map<Integer, List<NetworkVm>> vmlistReq7 = ds7.createVMs(broker7Id, applist7);
@@ -472,14 +477,15 @@ public class Simulation_influxdb {
 				e.printStackTrace();
 			}
 
-			new Thread(user6).start();
+		/*	new Thread(user6).start();
 			try {
 				Thread.sleep(100);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
 
-			new Thread(user7).start();
+			new Thread(user7).start(); */
+			
 			// Starts the simulation
 			// DCMngUtility.resultFile.println("Simulation started at
 			// "+calendar.getTime().toString());
@@ -499,8 +505,8 @@ public class Simulation_influxdb {
 			newList.addAll(broker3.getCloudletSubmittedList());
 			newList.addAll(broker4.getCloudletSubmittedList());
 			newList.addAll(broker5.getCloudletSubmittedList());
-			newList.addAll(broker6.getCloudletSubmittedList());
-			newList.addAll(broker7.getCloudletSubmittedList());
+		//	newList.addAll(broker6.getCloudletSubmittedList());
+		//	newList.addAll(broker7.getCloudletSubmittedList());
 
 			// Print results when simulation is over
 			printCloudletList(newList);
@@ -528,7 +534,7 @@ public class Simulation_influxdb {
 			System.out.println("Total " + totUsdHst + " hosts from " + allHst
 					+ " availbles hosts is used with mean prodactivity " + usagemean+", ALK:"+DCMngUtility.max_alk+","+DCMngUtility.min_alk);
 			DCMngUtility.dcPerformance.switchReport();
-			DCMngUtility.dcPerformance.hostReport();
+			//DCMngUtility.dcPerformance.hostReport();
 
 			Log.printLine("Project simulation finished!");
 		} catch (Exception e) {

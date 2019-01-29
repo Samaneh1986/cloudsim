@@ -24,7 +24,7 @@ import org.cloudbus.cloudsim.provisioners.BwProvisionerSimple;
 import org.cloudbus.cloudsim.provisioners.PeProvisionerSimple;
 import org.cloudbus.cloudsim.provisioners.RamProvisionerSimple;
 
-public class ManageDatacenter {
+public class ManageSpineLeafDatacenter {
 	private NetworkDatacenter datacenter;
 	private String VmAllcPolicy;
 	private VmAllocationPolicy VMPolicy;
@@ -32,18 +32,18 @@ public class ManageDatacenter {
 	
 	// Network structure variables
 	// !!! all the Bandwidth are in MB, because of overflow!!!
-	private int EdgeSwitchPort = 9;
-	private int AggSwitchPort = 4;
-	private int RootSwitchPort = 5;
-	private long BandWidthEdgeHost = 10 * 1024; // 1gb , BW number is in MB
-	private long BandWidthEdgeAgg = 40 * 1024 ;// 10gb
+	private int LeafSwitchPorts = 10;
+	private int SpineSwitchPorts = 20;
+	private int NumOfSpineSwitch = 4;
+	private long BandWidthLeafHost = 10 * 1024; // 1gb , BW number is in MB
+	private long BandWidthLeafSpine = 40 * 1024 ;// 10gb
 	private long BandWidthAggRoot = 40 * 1024 ;// 10gb
 	private double SwitchingDelayRoot = .00285; // ms
 	private double SwitchingDelayAgg  = .00245; // ms
 	private double SwitchingDelayEdge = .00157; // ms
 	
 	
-	public ManageDatacenter(String dcName,String policy){
+	public ManageSpineLeafDatacenter(String dcName,String policy){
 		datacenter = null;
 		VMPolicy = null;
 		VmAllcPolicy = policy;
@@ -54,10 +54,10 @@ public class ManageDatacenter {
 		int mips = 500 ; 
 		int ram = 8192; // host memory (MB) = 8GB
 		long storage = 1000000; // host storage
-		long bw = BandWidthEdgeHost;
-		int high_cpu_hosts = (int) (Math.round(EdgeSwitchPort * 0.6) * AggSwitchPort * RootSwitchPort); // 32 CPU, 8GB Ram
-		int hig_ram_hosts =  (int) (Math.round(EdgeSwitchPort * 0.3) * AggSwitchPort * RootSwitchPort); // 16 CPU, 16GB Ram
-		int mid_cpu_ram_hosts =  (int) ((EdgeSwitchPort - (Math.round(EdgeSwitchPort * 0.6) + Math.round(EdgeSwitchPort * 0.3))) * AggSwitchPort * RootSwitchPort); // 8 CPU, 8GB Ram
+		long bw = BandWidthLeafHost;
+		int high_cpu_hosts = (int) (Math.round(LeafSwitchPorts * 0.6) * SpineSwitchPorts); // 32 CPU, 8GB Ram
+		int hig_ram_hosts =  (int) (Math.round(LeafSwitchPorts * 0.3) * SpineSwitchPorts); // 16 CPU, 16GB Ram
+		int mid_cpu_ram_hosts =  (int) ((LeafSwitchPorts - (Math.round(LeafSwitchPorts * 0.6) + Math.round(LeafSwitchPorts * 0.3))) * SpineSwitchPorts); // 8 CPU, 8GB Ram
 		long total_hosts = high_cpu_hosts + hig_ram_hosts + mid_cpu_ram_hosts;
 		System.out.println("config:"+total_hosts+"="+high_cpu_hosts +","+ hig_ram_hosts+"," + mid_cpu_ram_hosts);
 		for (int i = 0; i <high_cpu_hosts; i++) { 
@@ -180,10 +180,10 @@ public class ManageDatacenter {
 		
 		try {
 			if(VmAllcPolicy.compareTo("TDB") == 0){
-				VMPolicy = new VmAllocationPolicyTDB(hostList);
+				VMPolicy = new VmAllocationPolicyTDB2(hostList);
 				//DCMngUtility.resultFile.println("VM palcement policy is TDB!");
 			}else if(VmAllcPolicy.compareTo("GREEDY") == 0){
-				VMPolicy = new VmAllocationPolicyGreedy(hostList);
+				VMPolicy = new VmAllocationPolicyGreedy2(hostList);
 				//DCMngUtility.resultFile.println("VM palcement policy is Greedy!");
 			}else if(VmAllcPolicy.compareTo("BFT") == 0){
 				VMPolicy = new VmAllocationPolicyBestFit(hostList);
@@ -206,66 +206,50 @@ public class ManageDatacenter {
 			e.printStackTrace();
 		}
 		// create intra-data center topology
-		// create two root switche
+		// create a root switche ...... should be removed later
 		int switchId=0;
 		RootSwitch rootsw = new RootSwitch("Root0",NetworkConstants.ROOT_LEVEL,datacenter);
-		RootSwitch root1sw = new RootSwitch("Root1",NetworkConstants.ROOT_LEVEL,datacenter); 
-		datacenter.Switchlist.put(rootsw.getId(), rootsw);
-		datacenter.Switchlist.put(root1sw.getId(), root1sw);
+		datacenter.Switchlist.put(rootsw.getId(), rootsw); 
 		rootsw.downlinkbandwidth = BandWidthAggRoot;
 		rootsw.switching_delay = SwitchingDelayRoot;
-		rootsw.numport = RootSwitchPort;
-		root1sw.downlinkbandwidth = BandWidthAggRoot;
-		root1sw.switching_delay = SwitchingDelayRoot;
-		root1sw.numport = RootSwitchPort;
+		rootsw.numport = NumOfSpineSwitch; 
 		
-		// create aggregation switches  
-		 int numOfAggSwitch = RootSwitchPort;
+		// create spine switches  
+		 int numOfAggSwitch = NumOfSpineSwitch;
 		 AggregateSwitch aggswitch[] = new AggregateSwitch[numOfAggSwitch];
 		 for (int as = 0; as < numOfAggSwitch; as++) {
-			    aggswitch[as] = new AggregateSwitch("Agg" + as, NetworkConstants.Agg_LEVEL, datacenter);
+			    aggswitch[as] = new AggregateSwitch("spin" + as, NetworkConstants.Agg_LEVEL, datacenter);
 			  //  aggswitch[as].id =switchId;
 			//	switchId++;
 			    aggswitch[as].switching_delay = SwitchingDelayAgg;
-			    aggswitch[as].numport = AggSwitchPort;
+			    aggswitch[as].numport = SpineSwitchPorts;
 			    datacenter.Switchlist.put(aggswitch[as].getId(), aggswitch[as]); 
 				aggswitch[as].uplinkbandwidth = BandWidthAggRoot;
-				aggswitch[as].uplinkswitches.add(rootsw);
-				aggswitch[as].uplinkswitches.add(root1sw);
-				//aggswitch[as].uplinkSwFullPrc.add(new Double(0.0));
-				rootsw.downlinkswitches.add(aggswitch[as]);
-				root1sw.downlinkswitches.add(aggswitch[as]);
+				aggswitch[as].uplinkswitches.add(rootsw); 
+				aggswitch[as].downlinkbandwidth=BandWidthLeafSpine;
+				rootsw.downlinkswitches.add(aggswitch[as]); 
 				//rootsw.downlinkSwFullPrc.add(new Double(0.0));
-		 
-		// create edge switches and assign them to hosts
-				int numOfEdgeSwitch =  AggSwitchPort ; 
+		 }
+		// create leaf switches and assign them to hosts
+				int numOfEdgeSwitch =  SpineSwitchPorts; 
 				int hostno=0;
 				int highcpuhost = 0;
 				int highramhost = high_cpu_hosts;
 				int midramcpuhost = high_cpu_hosts+hig_ram_hosts;
 				EdgeSwitch edgeswitch[] = new EdgeSwitch[numOfEdgeSwitch];
 				for (int i = 0; i < numOfEdgeSwitch; i++) {
-					edgeswitch[i] = new EdgeSwitch("Edge"+as+i, NetworkConstants.EDGE_LEVEL, datacenter);
-				//	edgeswitch[i]=switchId;
-				//	switchId++;
+					edgeswitch[i] = new EdgeSwitch("leaf"+i, NetworkConstants.EDGE_LEVEL, datacenter);
 					edgeswitch[i].switching_delay = SwitchingDelayEdge;
-					edgeswitch[i].numport = EdgeSwitchPort;
+					edgeswitch[i].numport = LeafSwitchPorts;
+					edgeswitch[i].uplinkbandwidth = BandWidthLeafSpine;
+					edgeswitch[i].downlinkbandwidth = BandWidthLeafSpine;
 					datacenter.Switchlist.put(edgeswitch[i].getId(), edgeswitch[i]);
-					edgeswitch[i].downlinkbandwidth = BandWidthEdgeHost;
-					edgeswitch[i].uplinkswitches.add(aggswitch[as]);
-					//edgeswitch[i].uplinkSwFullPrc.add(new Double(0.0));
-				 	edgeswitch[i].uplinkbandwidth = BandWidthEdgeAgg;
-				 	System.out.println("Switch edge created BW:"+edgeswitch[i].uplinkbandwidth+","+BandWidthEdgeAgg);
-					aggswitch[as].downlinkswitches.add(edgeswitch[i]);
-					//aggswitch[as].downlinkSwFullPrc.add(new Double(0.0));
-					aggswitch[as].downlinkbandwidth = BandWidthEdgeAgg;  
-					
-					for(int agghostno=0; agghostno<EdgeSwitchPort;){
-						if(agghostno < Math.round(EdgeSwitchPort * 0.6)){
+				 	System.out.println("Switch edge created BW:"+edgeswitch[i].uplinkbandwidth+","+BandWidthLeafSpine);
+					for(int agghostno=0; agghostno<LeafSwitchPorts;){
+						if(agghostno < Math.round(LeafSwitchPorts * 0.6)){
 							NetworkHost nhs = (NetworkHost) datacenter.getHostList().get(highcpuhost);
-							
 							if(nhs.sw == null){
-								nhs.bandwidth = BandWidthEdgeHost; 
+								nhs.bandwidth = BandWidthLeafHost; 
 								System.out.println("host ID :" + nhs.getId()+" index "+highcpuhost+"connect to switch :" + edgeswitch[i].getName());
 								edgeswitch[i].hostlist.put(nhs.getId(), nhs);
 								datacenter.HostToSwitchid.put(nhs.getId(), edgeswitch[i].getId());
@@ -274,11 +258,11 @@ public class ManageDatacenter {
 							}
 							highcpuhost++;
 						}
-						if(Math.round(EdgeSwitchPort * 0.6) <= agghostno && agghostno < Math.round(EdgeSwitchPort * 0.9)){
+						if(Math.round(LeafSwitchPorts * 0.6) <= agghostno && agghostno < Math.round(LeafSwitchPorts * 0.9)){
 							NetworkHost nhs = (NetworkHost) datacenter.getHostList().get(highramhost);
 							
 							if(nhs.sw == null){
-								nhs.bandwidth = BandWidthEdgeHost; 
+								nhs.bandwidth = BandWidthLeafHost; 
 								System.out.println("host ID :" + nhs.getId()+" index "+highramhost+"connect to switch :" + edgeswitch[i].getName());
 								edgeswitch[i].hostlist.put(nhs.getId(), nhs);
 								datacenter.HostToSwitchid.put(nhs.getId(), edgeswitch[i].getId());
@@ -287,11 +271,11 @@ public class ManageDatacenter {
 							}
 							highramhost++;
 						}
-						if(Math.round(EdgeSwitchPort * 0.9) <= agghostno){
+						if(Math.round(LeafSwitchPorts * 0.9) <= agghostno){
 							NetworkHost nhs = (NetworkHost) datacenter.getHostList().get(midramcpuhost);
 							
 							if(nhs.sw == null){
-								nhs.bandwidth = BandWidthEdgeHost; 
+								nhs.bandwidth = BandWidthLeafHost; 
 								System.out.println("host ID :" + nhs.getId()+" index "+midramcpuhost+"connect to switch :" + edgeswitch[i].getName());
 								edgeswitch[i].hostlist.put(nhs.getId(), nhs);
 								datacenter.HostToSwitchid.put(nhs.getId(), edgeswitch[i].getId());
@@ -301,8 +285,19 @@ public class ManageDatacenter {
 							midramcpuhost++;
 						}
 				}
-				}  
+				  
 		 }
+		// connect all spine to all leaf
+				 for (int as = 0; as < numOfAggSwitch; as++) {
+					 int spineId = aggswitch[as].getId();
+					 Switch curSpine = datacenter.Switchlist.get(spineId);
+					 for (int i = 0; i < numOfEdgeSwitch; i++) {
+						 int leafId = edgeswitch[i].getId();
+						 Switch curLeaf= datacenter.Switchlist.get(leafId);
+						 curSpine.downlinkswitches.add(curLeaf);
+						 curLeaf.uplinkswitches.add(curSpine);
+					 }
+				 }
 		////
 		return datacenter;
 	}

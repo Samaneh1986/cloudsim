@@ -24,13 +24,13 @@ import org.cloudbus.cloudsim.network.exDatacenter.Switch;
  * @author samaneh
  *
  */
-public class VmAllocationPolicyGreedy extends VmAllocationPolicy {
+public class VmAllocationPolicyGreedy2 extends VmAllocationPolicy {
 	private Map<String, Host> vmTable; // VM Id to Host mapping
 	private List<NetworkHost> host_list;
 	private int [] host_selected;
 	private double [][] distance_matrix;
 	
-	public VmAllocationPolicyGreedy(List<? extends Host> list) {
+	public VmAllocationPolicyGreedy2(List<? extends Host> list) {
 		super(list);
 
 		setVmTable(new HashMap<String, Host>());
@@ -115,19 +115,7 @@ public class VmAllocationPolicyGreedy extends VmAllocationPolicy {
 				available_hosts++;
 		}
 		if(vmList.size() > available_hosts){
-			asw = (AggregateSwitch) esw.uplinkswitches.get(0);
-			int available_agg_hosts=0;
-			for(Switch csw : asw.downlinkswitches){
-				for(NetworkHost curhost : csw.hostlist.values()){
-					if(curhost.isSuitableForVm(vmList.get(0)))
-						available_agg_hosts++;
-				}
-			}
-			if(vmList.size() > available_agg_hosts)
-				create_distance_matrix(asw.uplinkswitches.get(0));
-			else
-				create_distance_matrix(asw);
-			//create_distance_matrix(null);
+			create_distance_matrix(null);
 			}
 		else{
 			create_distance_matrix(esw);
@@ -236,22 +224,10 @@ public class VmAllocationPolicyGreedy extends VmAllocationPolicy {
 private void create_distance_matrix(Switch rsw){ 
 		
 		host_list.clear();
-		//if(rsw != null){
-		if (rsw.level == NetworkConstants.ROOT_LEVEL){
-			for(Switch sw : rsw.downlinkswitches){
-				for(Switch edgsw : sw.downlinkswitches){ 
-					for(NetworkHost host : edgsw.hostlist.values()){ 
-							host_list.add(host);
-					}
-			    }
+		if(rsw == null){
+			for(Host host : super.getHostList()){ 
+				host_list.add((NetworkHost)host);
 			}
-	    	}
-	    else if (rsw.level == NetworkConstants.Agg_LEVEL){
-		for(Switch sw : rsw.downlinkswitches){
-			for(NetworkHost host : sw.hostlist.values()){
-					host_list.add(host);
-			}
-		}
     	}
 	//	}
     	else{
@@ -287,22 +263,8 @@ private double distance(NetworkHost host1, NetworkHost host2){
 	{
 		distance = 2;
 	}
-	else{ // hosts are connected to the same aggregation switch
-		String edg1Name;
-		String edg2Name;
-		Switch aggSw = null;
-		for(Switch ns1  : host1.sw.uplinkswitches){ 
-			edg1Name = ns1.getName();
-			for(Switch ns2  : host2.sw.uplinkswitches){ 
-				edg2Name = ns2.getName();
-				if(edg1Name.equalsIgnoreCase(edg2Name))
-					aggSw = ns2;
-			}
-		}
-		if(aggSw!=null)	
-			distance = 4;
-		else 
-			distance = 6;
+	else{ 
+		distance = 4; 
 	}
     return distance;
 }

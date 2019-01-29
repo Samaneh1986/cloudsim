@@ -15,9 +15,9 @@ import org.cloudbus.cloudsim.network.exDatacenter.NetworkConstants;
 import org.cloudbus.cloudsim.network.exDatacenter.NetworkVm;
 import org.cloudbus.cloudsim.network.exDatacenter.TaskStage;
 
-public class InfluxdbWorkload {
+public class JsonWorkloadGenerator {
 	private String datasetPath;  ///jsonDS/result1.json
-	private InfluxdbDataset dataset;
+	private JsonDataset dataset;
 	private List<AppCloudlet> applicatonList;
 	
 	// These Ids are used to manage if data belongs to a new cloudlet or application
@@ -28,9 +28,9 @@ public class InfluxdbWorkload {
 	
 	private int brokerId;
 	
-	public InfluxdbWorkload(String datasetPathInput){
+	public JsonWorkloadGenerator(String datasetPathInput){
 		this.datasetPath = datasetPathInput;
-		dataset = new InfluxdbDataset(datasetPath);
+		dataset = new JsonDataset(datasetPath);
 		applicatonList = new ArrayList<AppCloudlet>();
 		DCMngUtility.appClistIndex = new HashMap<Integer, ArrayList<Integer>>();
 	}
@@ -112,7 +112,7 @@ public class InfluxdbWorkload {
 		//for execution satge we add a stage
 		if(this.dataset.stageTyp.equals("data_execute")){
 			cl.stages.remove(0);
-			cl.stages.add(new TaskStage(NetworkConstants.EXECUTION, 0, Math.round(this.dataset.exec_time*1000),cl.numStage, 0, 0, 0));
+			cl.stages.add(new TaskStage(NetworkConstants.EXECUTION, 0, Math.round(this.dataset.exec_time*1000),0, 0, 0, 0));
 			//cl.numStage++;
 			return true;
 		}
@@ -176,7 +176,8 @@ public class InfluxdbWorkload {
 				utilizationModel);
 		// create new cloudlet based on dataset info
 		cl.stages.add(new TaskStage(NetworkConstants.EXECUTION, 0, 1000, 0, 10, 0, 0));
-		cl.numStage = 1;
+		cl.stages.add(new TaskStage(NetworkConstants.INPUT_READ, this.dataset.fileSize, 0, 1, 0, 0, 0));
+		cl.numStage = 2;
 		return cl;
 	}
 	

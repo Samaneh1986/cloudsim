@@ -58,7 +58,7 @@ public class Simulation_test {
 			brokerId = broker.getId();
 			//
 			String workingDirectory = System.getProperty("user.dir");
-			InfluxdbWorkload ds = new InfluxdbWorkload(workingDirectory+"/src/main/java/org/cloudbus/cloudsim/examples/Vmp_Prj/jsonDS/dataSet_hbase.json");
+			JsonWorkloadGenerator ds = new JsonWorkloadGenerator(workingDirectory+"/src/main/java/org/cloudbus/cloudsim/examples/Vmp_Prj/jsonDS/dataSet_hbase.json");
 			appList = ds.createWorkload(brokerId);
 			vmlistReq = ds.createVMs(brokerId,appList);
 			for(int appId : vmlistReq.keySet()) {
