@@ -53,6 +53,9 @@ public class NetworkCloudletSpaceSharedScheduler extends CloudletScheduler {
          * and each value is the list of packets sent by that VM.
          */
 	public Map<Integer, List<HostPacket>> pktrecv;
+	
+	public double inputData;
+	public double curStageData;
 
 	/**
 	 * Creates a new CloudletSchedulerSpaceShared object. 
@@ -118,14 +121,54 @@ public class NetworkCloudletSpaceSharedScheduler extends CloudletScheduler {
 						// change the stage
 					}
 				}
+				//reading data from storage
+				if (st.type == NetworkConstants.INPUT_READ) {
+					//if(cl.getCloudletId()==2)
+					//	System.out.println(" cl 2 in input phase");
+					double tempData = 0;
+					curStageData = st.data;
+					List<NetStorageBlock> request = new ArrayList<NetStorageBlock>();
+					while(tempData < curStageData){
+						// if data is finished, read from the first
+						cl.curDataindex++;
+						//System.out.println("satge "+cl.curDataindex+" read input : "+tempData+" of "+st.data);
+						request.add(cl.inputData.get(cl.curDataindex));
+						tempData += cl.inputData.get(cl.curDataindex).getData();
+						//if(cl.getCloudletId()==2)
+						//	System.out.println("temp data :"+tempData+", total"+curStageData);
+						if(cl.curDataindex >= cl.inputData.size())
+							cl.curDataindex = -1;
+					}
+					CloudSim.send(NetDatacenterBroker.linkDC.getId(),
+							NetDatacenterBroker.linkDC.storageManagerId,
+							0.0001, // delay
+							CloudSimTags.Storage_Input_read,
+							request);
+					//System.out.println(inputData + "," + st.data);
+					changetonextstage(cl, st);
+					
+				}
+				if (st.type == NetworkConstants.INPUT_READ_WAIT) {
 
+					//if(cl.getCloudletId()==2)
+					//	System.out.println(" cl 2 recieving "+this.inputData+" of "+ this.curStageData);
+		    		if(this.inputData >= this.curStageData){
+						this.inputData = 0;
+						changetonextstage(cl, st);
+					}
+				}
+				//writing data to storage
+				if (st.type == NetworkConstants.OUTPUT_WRITE) {
+					
+					changetonextstage(cl, st);
+				}
 				
 				if (st.type == NetworkConstants.WAIT_RECV) {
-			//		System.out.println("Stage "+cl.currStagenum+" for cl "+cl.getCloudletId()+ "of app "+cl.appId+"is WAIT_RECV for "+st.peer+" amount:"+st.data);
 					List<HostPacket> pktlist = pktrecv.get(st.peer);
-				//	System.out.println("packet size is "+pktlist.size());
 					List<HostPacket> pkttoremove = new ArrayList<HostPacket>();
 					if (pktlist != null) {
+				//		if(cl.getCloudletId()==2)
+				//			System.out.println("packet size is "+pktlist.size()+" in stage "+cl.currStagenum+" of "+cl.numStage);
 				//		System.out.println("packet size is "+pktlist.size());
 						Iterator<HostPacket> it = pktlist.iterator();
 						HostPacket pkt = null;
@@ -135,7 +178,11 @@ public class NetworkCloudletSpaceSharedScheduler extends CloudletScheduler {
 							if (pkt.reciever == cl.getVmId()) {
 								pkt.recievetime = CloudSim.clock();
 								st.time = CloudSim.clock() - pkt.sendtime;
-								changetonextstage(cl, st);
+								if(pkt.isLastPkt == 1){
+									changetonextstage(cl, st);
+								//	if(cl.getCloudletId()==2)
+								//		System.out.println("last packet ");
+								}
 								pkttoremove.add(pkt);
 							}
 						}
@@ -241,22 +288,23 @@ public class NetworkCloudletSpaceSharedScheduler extends CloudletScheduler {
 			cl.currStagenum = currstage + 1;
 			int i = 0;
 			for (i = cl.currStagenum; i < cl.stages.size(); i++) {
-					HostPacket pkt = new HostPacket(
-							cl.getVmId(),
-							cl.stages.get(i).peer,
-							cl.stages.get(i).data,
-							CloudSim.clock(),
-							-1,
-							cl.getCloudletId(),
-							cl.stages.get(i).vpeer); 
-
 					if (cl.stages.get(i).type == NetworkConstants.WAIT_SEND) {
+						HostPacket pkt = new HostPacket(
+								cl.getVmId(),
+								cl.stages.get(i).peer,
+								cl.stages.get(i).data,
+								CloudSim.clock(),
+								-1,
+								cl.getCloudletId(),
+								cl.stages.get(i).vpeer); 
 						List<HostPacket> pktlist = pkttosend.get(cl.getVmId());
 						if (pktlist == null) {
 							pktlist = new ArrayList<HostPacket>();
 						}
 					pktlist.add(pkt);
 					pkttosend.put(cl.getVmId(), pktlist);
+				//	if(cl.getCloudletId() == 2)
+				//		System.out.println("cl 2 sending data to "+cl.stages.get(i).vpeer);
 
 				} else {
 					break;
@@ -264,9 +312,9 @@ public class NetworkCloudletSpaceSharedScheduler extends CloudletScheduler {
 
 			}
 			NetDatacenterBroker.linkDC.schedule(
-					NetDatacenterBroker.linkDC.getId(),
-					0.0001,
-					CloudSimTags.VM_DATACENTER_EVENT);
+						NetDatacenterBroker.linkDC.getId(),
+						0.0001,
+						CloudSimTags.VM_DATACENTER_EVENT);
 			if (i == cl.stages.size()) {
 				cl.currStagenum = NetworkConstants.FINISH;
 			} else {

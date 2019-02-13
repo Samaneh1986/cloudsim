@@ -198,7 +198,7 @@ public class ManageSpineLeafDatacenter {
 					storageList,
 					0);
 			
-			datacenter.VmAllcPlcyTyp = DCMngUtility.VM_ALLC_PLCY_CLUSTER;
+			datacenter.VmAllcPlcyTyp = NetworkConstants.VM_ALLC_PLCY_CLUSTER;
 			
 		
 

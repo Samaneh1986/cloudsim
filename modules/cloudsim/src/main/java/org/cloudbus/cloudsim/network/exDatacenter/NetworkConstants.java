@@ -26,6 +26,8 @@ public class NetworkConstants {
 	public static int currentAppId = 0;
 	public static int currentVmId = 0;
 	public static int currentHostId = 0;
+	public static int currentStorageId = 0;
+	public static int currentHardIdndex = 0;
 
 	/** 
          * Types of {@link TaskStage}
@@ -34,6 +36,9 @@ public class NetworkConstants {
 	public static final int EXECUTION = 0; 
 	public static final int WAIT_SEND = 1;
 	public static final int WAIT_RECV = 2;
+	public static final int INPUT_READ = 3;
+	public static final int INPUT_READ_WAIT = 4;
+	public static final int OUTPUT_WRITE = 5;
 	public static final int FINISH = -2;
 
 	/** Number of switches at root level. */
@@ -75,4 +80,11 @@ public class NetworkConstants {
 	public static int totaldatatransfer = 0;
 	public static double totaldatatransferTime = 0;
 	public static double interRackDataTransfer = 0;
+
+	/***************************************/
+	public static final int VM_ALLC_PLCY_CLUSTER = 0;
+	public static final int VM_ALLC_PLCY_SINGLE = 1;
+	public static final int MAX_PACKET_SIZE_MB = 10;
+	public static final int MAX_DATA_BLK_SIZE_MB = 40;
+	/***************************************/
 }

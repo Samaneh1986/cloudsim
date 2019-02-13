@@ -31,7 +31,7 @@ import org.cloudbus.cloudsim.distributions.ContinuousDistribution;
 public class HarddriveStorage implements Storage {
 
 	/** A list storing the names of all files on the hard drive. */
-	private List<String> nameList;
+	protected List<String> nameList;
 
 	/** A list storing all files stored on the hard drive. */
 	private List<File> fileList;
@@ -43,10 +43,10 @@ public class HarddriveStorage implements Storage {
 	private ContinuousDistribution gen;
 
 	/** The current size of files on the hard drive. */
-	private double currentSize;
+	protected double currentSize;
 
 	/** The total capacity of the hard drive in MB. */
-	private final double capacity;
+	protected final double capacity;
 
 	/** The maximum transfer rate in MB/sec. */
 	private double maxTransferRate;

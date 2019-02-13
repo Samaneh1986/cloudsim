@@ -273,6 +273,13 @@ public class CloudSimTags {
 	public static final int NextCycle = BASE + 48;
 	
 	public static final int RESOURCE_CHARACTERISTICS_DELAY = BASE + 49;
+	/**
+	 * Tags defined for communicate with storage hosts
+	 */
+
+	public static final int Storage_Input_read = BASE + 50;
+
+	public static final int Storge_Output_Write = BASE + 51;
 
 	/** Private Constructor. */
 	private CloudSimTags() {

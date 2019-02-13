@@ -76,6 +76,13 @@ public class NetworkDatacenter extends Datacenter {
          * is a VM id and the corresponding value is the id of the host where the VM is placed.
          */
 	public Map<Integer, Integer> VmtoHostlist;
+	
+	/**
+     * A map of datacenter storages where each key is a storage host id
+     * and the corresponding value is the storage host itself.
+     */
+	public Map<Integer, NetStorageHost> Storagelist;
+	public int storageManagerId;
 
 	/**
 	 * Instantiates a new NetworkDatacenter object.
@@ -111,6 +118,7 @@ public class NetworkDatacenter extends Datacenter {
 		HostToSwitchid = new HashMap<Integer, Integer>();
 		VmtoHostlist = new HashMap<Integer, Integer>();
 		Switchlist = new HashMap<Integer, Switch>();
+		Storagelist = new HashMap<Integer, NetStorageHost>();
 	}
 
 	@Override

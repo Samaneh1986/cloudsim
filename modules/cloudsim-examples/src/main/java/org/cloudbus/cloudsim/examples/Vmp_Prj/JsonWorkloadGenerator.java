@@ -27,6 +27,7 @@ public class JsonWorkloadGenerator {
 	private int cldNO;
 	
 	private int brokerId;
+	private int predefined_stages = 3;
 	
 	public JsonWorkloadGenerator(String datasetPathInput){
 		this.datasetPath = datasetPathInput;
@@ -66,7 +67,7 @@ public class JsonWorkloadGenerator {
 				DCMngUtility.appClistIndex.get(curCl.appId).add(Integer.valueOf(dataset.cloudletId));
 				
 				if(curApp.SendDataTo.get(Integer.valueOf(dataset.cloudletId))!=null) 
-					curCl.numStage =curApp.SendDataTo.get(Integer.valueOf(dataset.cloudletId)).size()+1;
+					curCl.numStage =curApp.SendDataTo.get(Integer.valueOf(dataset.cloudletId)).size()+predefined_stages;
 				
 				boolean result = manageStages(curApp, curCl);
 				//stageId++;
@@ -143,15 +144,15 @@ public class JsonWorkloadGenerator {
 				}
 				rcp_cl.numStage++;
 			}
-			else
+			else//send data to a cloudlet which is not created yet
 			{
 				if(app.SendDataTo.get(resiverId)==null){ // first data transferring stage for current cloudlet
 					Map<int[],Double> info = new HashMap<int[],Double>();
-					info.put(new int[]{ 1, (Integer.valueOf(dataset.cloudletId))},  (-1 * dataMB)); 
+					info.put(new int[]{ predefined_stages, (Integer.valueOf(dataset.cloudletId))},  (-1 * dataMB)); 
 				    app.SendDataTo.put(resiverId,info);
 				    }
 				else{
-					int lastStage = app.SendDataTo.get(resiverId).size() + 1;
+					int lastStage = app.SendDataTo.get(resiverId).size() + predefined_stages;
 					app.SendDataTo.get(resiverId).put(new int[]{(int) lastStage,Integer.valueOf(dataset.cloudletId)}, (-1 * dataMB));
 					
 				} 
@@ -177,7 +178,8 @@ public class JsonWorkloadGenerator {
 		// create new cloudlet based on dataset info
 		cl.stages.add(new TaskStage(NetworkConstants.EXECUTION, 0, 1000, 0, 10, 0, 0));
 		cl.stages.add(new TaskStage(NetworkConstants.INPUT_READ, this.dataset.fileSize, 0, 1, 0, 0, 0));
-		cl.numStage = 2;
+		cl.stages.add(new TaskStage(NetworkConstants.INPUT_READ_WAIT, this.dataset.fileSize, 0, 2, 0, 0, 0));
+		cl.numStage = predefined_stages;//equal to predefined stages (first exec + 2 inputs)
 		return cl;
 	}
 	

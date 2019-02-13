@@ -18,6 +18,8 @@ import org.cloudbus.cloudsim.network.exDatacenter.AppCloudlet;
 import org.cloudbus.cloudsim.network.exDatacenter.DCMngUtility;
 import org.cloudbus.cloudsim.network.exDatacenter.DCPerformance;
 import org.cloudbus.cloudsim.network.exDatacenter.NetDatacenterBroker;
+import org.cloudbus.cloudsim.network.exDatacenter.NetStorageHost;
+import org.cloudbus.cloudsim.network.exDatacenter.NetStorageManager;
 import org.cloudbus.cloudsim.network.exDatacenter.NetworkConstants;
 import org.cloudbus.cloudsim.network.exDatacenter.NetworkDatacenter;
 import org.cloudbus.cloudsim.network.exDatacenter.NetworkHost;
@@ -48,6 +50,7 @@ public class Simulation_Json {
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
 		Log.printLine("Starting project simulation...");
+		String workingDirectory = System.getProperty("user.dir")+"/src/main/java/org/cloudbus/cloudsim/examples/Vmp_Prj";
 
 		try {
 			// Initialize the CloudSim library
@@ -69,8 +72,14 @@ public class Simulation_Json {
 			// mDc = new ManageSpineLeafDatacenter("Datacenter_001","TDB");
 			 
 			NetworkDatacenter datacenter001 = mDc.createDatacenter();
-			// Create Broker
 			NetDatacenterBroker.setLinkDC(datacenter001);
+			NetStorageManager.setLinkDC(datacenter001);
+			//
+			String mapperPath = workingDirectory +"/placement_information.csv";
+			NetStorageManager storageMgr = mDc.createStorageMgr("CEPH001",datacenter001.Storagelist,mapperPath);
+			datacenter001.storageManagerId =storageMgr.getId(); 
+			// Create Broker
+			
 			broker1 = mDc.createBroker("broker_001");
 			broker1Id = broker1.getId();
 			broker2 = mDc.createBroker("broker_002");
@@ -86,10 +95,12 @@ public class Simulation_Json {
 			broker7 = mDc.createBroker("broker_007");
 			broker7Id = broker7.getId();
 			// create initial VMs
-			String workingDirectory = System.getProperty("user.dir");
-			JsonWorkloadGenerator ds = new JsonWorkloadGenerator(
-					workingDirectory + "/src/main/java/org/cloudbus/cloudsim/examples/Vmp_Prj/jsonDS/dataSet2.json");
+			
+			JsonWorkloadGenerator ds = new JsonWorkloadGenerator(workingDirectory + "/jsonDS/dataSet1.json");
 			appList = ds.createWorkload(broker1Id);
+			for(AppCloudlet app : appList){
+				storageMgr.assignStorageToApp(app, "pool001");
+			}
 			
 			Map<Integer, List<NetworkVm>> vmlistReq = ds.createVMs(broker1Id, appList);
 			// assign VMs to broker related variable
@@ -448,7 +459,7 @@ public class Simulation_Json {
 				}
 			};
 
-			new Thread(user2).start();
+			/*new Thread(user2).start();
 
 			try {
 				Thread.sleep(100);
@@ -477,7 +488,7 @@ public class Simulation_Json {
 				e.printStackTrace();
 			}
 
-		/*	new Thread(user6).start();
+			new Thread(user6).start();
 			try {
 				Thread.sleep(100);
 			} catch (InterruptedException e) {
@@ -532,7 +543,7 @@ public class Simulation_Json {
 			}
 			usagemean = usagemean / totUsdHst;
 			System.out.println("Total " + totUsdHst + " hosts from " + allHst
-					+ " availbles hosts is used with mean prodactivity " + usagemean+", ALK:"+DCMngUtility.max_alk+","+DCMngUtility.min_alk);
+					+ " availbles hosts is used with mean prodactivity " + usagemean);
 			DCMngUtility.dcPerformance.switchReport();
 			//DCMngUtility.dcPerformance.hostReport();
 

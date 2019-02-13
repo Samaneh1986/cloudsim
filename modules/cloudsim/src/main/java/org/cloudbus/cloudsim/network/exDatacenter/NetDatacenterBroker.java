@@ -363,7 +363,7 @@ public class NetDatacenterBroker extends SimEntity {
 	public void CreateCustomVMs(int datacenterId, List<NetworkVm> NewVmlist) {
 		//System.out.println("CALLED CREATE CUSTOM VM....");
 		// if the VM allocation policy needs whole cluster of VMs
-		if(linkDC.VmAllcPlcyTyp == DCMngUtility.VM_ALLC_PLCY_CLUSTER){
+		if(linkDC.VmAllcPlcyTyp == NetworkConstants.VM_ALLC_PLCY_CLUSTER){
 			System.out.println("***** CLUSTER VM ALLOCATION POLICY *****");
 			linkDC.processVmListCreateNetwork(NewVmlist);  
 			for (NetworkVm vm : NewVmlist) { 

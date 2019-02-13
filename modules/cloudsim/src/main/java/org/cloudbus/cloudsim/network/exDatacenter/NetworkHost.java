@@ -177,10 +177,8 @@ public class NetworkHost extends Host {
 	private void recvpackets() {
 		for (NetworkPacket hs : packetrecieved) {
 			hs.pkt.recievetime = CloudSim.clock();
- 
 			Vm vm = VmList.getById(getVmList(), hs.pkt.reciever);  
-			if(hs.pkt.reciever==483)
-				System.out.println(" searching for VM "+hs.pkt.reciever+" on host "+this.getId()+", result:"+vm);
+			
 			List<HostPacket> pktlist = ((NetworkCloudletSpaceSharedScheduler) vm.getCloudletScheduler()).pktrecv
 					.get(hs.pkt.sender);
 
@@ -196,6 +194,13 @@ public class NetworkHost extends Host {
 		
 		packetrecieved.clear();
 	}
+	public void dataRead(NetworkPacket hs){
+		Vm vm = VmList.getById(getVmList(), hs.pkt.reciever); 
+		((NetworkCloudletSpaceSharedScheduler) vm.getCloudletScheduler()).inputData += hs.pkt.data;
+		//if(hs.pkt.virtualrecvid == 2)
+		//	System.out.println("recieve "+hs.pkt.hashCode()+" on host data : "+hs.pkt.data+", total "+((NetworkCloudletSpaceSharedScheduler) vm.getCloudletScheduler()).inputData);
+		
+	}
 
 	/**
 	 * Sends packets checks whether a packet belongs to a local VM or to a 
@@ -209,18 +214,35 @@ public class NetworkHost extends Host {
                                     .getCloudletScheduler()).pkttosend.entrySet()) {
                         List<HostPacket> pktlist = es.getValue();
                         for (HostPacket pkt : pktlist) {
-                                NetworkPacket hpkt = new NetworkPacket(getId(), pkt, vm.getId(), pkt.sender);
-                                Vm vm2 = VmList.getById(this.getVmList(), hpkt.recievervmid);
-                                if (vm2 != null) {
-                                        packetTosendLocal.add(hpkt);
-                                } else {
-                                        packetTosendGlobal.add(hpkt);
-                                        for(Vm gVm : super.getDatacenter().getVmList()){
-                                        	if(gVm.getId() == hpkt.recievervmid){
-                                        		hostOfsendGlobal.add((NetworkHost) gVm.getHost());
-                                        	}
-                                        }
-                                }
+                        //	if(pkt.storageId == 0){
+	                        	int pkNo = 1;
+	                        	double remainData = pkt.data;
+	                        	if(pkt.data > NetworkConstants.MAX_PACKET_SIZE_MB)
+	                        		pkNo = (int) Math.ceil(pkt.data / NetworkConstants.MAX_PACKET_SIZE_MB);
+	                        	for(int i = 0 ; i<pkNo ; i++){
+	                        		HostPacket newPkt = pkt;
+	                        		if(i == pkNo-1){
+	                        			newPkt.data = remainData;
+	                        			newPkt.isLastPkt = 1;
+	                        		}
+	                        		else{
+	                        			newPkt.data = NetworkConstants.MAX_PACKET_SIZE_MB;
+	                        			remainData = remainData - NetworkConstants.MAX_PACKET_SIZE_MB;
+	                        		}
+	                                NetworkPacket hpkt = new NetworkPacket(getId(), newPkt, vm.getId(), newPkt.sender);
+	                                Vm vm2 = VmList.getById(this.getVmList(), hpkt.recievervmid);
+	                                if (vm2 != null) {
+	                                        packetTosendLocal.add(hpkt);
+	                                } else {
+	                                        packetTosendGlobal.add(hpkt);
+	                                        for(Vm gVm : super.getDatacenter().getVmList()){
+	                                        	if(gVm.getId() == hpkt.recievervmid){
+	                                        		hostOfsendGlobal.add((NetworkHost) gVm.getHost());
+	                                        	}
+	                                        }
+	                                }
+	                     //   	}
+                        	}
                        }
                         bytesTosendGlobalSize = 0.0;
                         for(NetworkPacket p : packetTosendGlobal)
@@ -265,11 +287,14 @@ public class NetworkHost extends Host {
 			hs.stime = hs.rtime;
             hs.pkt.recievetime = CloudSim.clock();
          //   System.out.println("global sending start time : "+ hs.pkt.recievetime);
-                    double delay = 0; // (1000 * hs.pkt.data) / avband;
+                    double delay = (1000 * hs.pkt.data) / avband;
                     
                     //System.out.println("size :"+hs.pkt.data+", from "+this.getId()+" to "+hostOfsendGlobal.get(hostIx).getId()+" with VM size "+hostOfsendGlobal.get(hostIx).getVmList().size());
-                    delay = DCMngUtility.computeDelay(this,hostOfsendGlobal.get(hostIx),hs.pkt);
-                    delay = delay +100; //convert s to ms
+                  //  delay = DCMngUtility.computeDelay(this,hostOfsendGlobal.get(hostIx),hs.pkt);
+                  //  delay = delay * 1000; //convert s to ms
+                    
+                    if(sw.getId() != hostOfsendGlobal.get(hostIx).sw.getId())
+                    	NetworkConstants.interRackDataTransfer += hs.pkt.data;
                     NetworkConstants.totaldatatransfer += hs.pkt.data;
                     NetworkConstants.totaldatatransferTime += delay;
 

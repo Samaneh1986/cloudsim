@@ -3,9 +3,12 @@ package org.cloudbus.cloudsim.examples.Vmp_Prj;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 import org.cloudbus.cloudsim.DatacenterCharacteristics;
+import org.cloudbus.cloudsim.HarddriveStorage;
 import org.cloudbus.cloudsim.Host;
+import org.cloudbus.cloudsim.ParameterException;
 import org.cloudbus.cloudsim.Pe;
 import org.cloudbus.cloudsim.Storage;
 import org.cloudbus.cloudsim.VmAllocationPolicy;
@@ -15,10 +18,16 @@ import org.cloudbus.cloudsim.network.exDatacenter.AggregateSwitch;
 import org.cloudbus.cloudsim.network.exDatacenter.DCMngUtility;
 import org.cloudbus.cloudsim.network.exDatacenter.EdgeSwitch;
 import org.cloudbus.cloudsim.network.exDatacenter.NetDatacenterBroker;
+import org.cloudbus.cloudsim.network.exDatacenter.NetHarddriveStorage;
+import org.cloudbus.cloudsim.network.exDatacenter.NetStorageHost;
+import org.cloudbus.cloudsim.network.exDatacenter.NetStorageManager;
+import org.cloudbus.cloudsim.network.exDatacenter.NetStoragePool;
+import org.cloudbus.cloudsim.network.exDatacenter.NetStoragePoolRuleSimple;
 import org.cloudbus.cloudsim.network.exDatacenter.NetworkConstants;
 import org.cloudbus.cloudsim.network.exDatacenter.NetworkDatacenter;
 import org.cloudbus.cloudsim.network.exDatacenter.NetworkHost;
 import org.cloudbus.cloudsim.network.exDatacenter.RootSwitch;
+import org.cloudbus.cloudsim.network.exDatacenter.StorageSwitch;
 import org.cloudbus.cloudsim.network.exDatacenter.Switch;
 import org.cloudbus.cloudsim.provisioners.BwProvisionerSimple;
 import org.cloudbus.cloudsim.provisioners.PeProvisionerSimple;
@@ -35,6 +44,8 @@ public class ManageDatacenter {
 	private int EdgeSwitchPort = 9;
 	private int AggSwitchPort = 4;
 	private int RootSwitchPort = 5;
+	private int NumSrorageInRack = 5;
+	private long BandWidthEdgeStorage = 10 * 1024; // 1gb , BW number is in MB
 	private long BandWidthEdgeHost = 10 * 1024; // 1gb , BW number is in MB
 	private long BandWidthEdgeAgg = 40 * 1024 ;// 10gb
 	private long BandWidthAggRoot = 40 * 1024 ;// 10gb
@@ -59,7 +70,7 @@ public class ManageDatacenter {
 		int hig_ram_hosts =  (int) (Math.round(EdgeSwitchPort * 0.3) * AggSwitchPort * RootSwitchPort); // 16 CPU, 16GB Ram
 		int mid_cpu_ram_hosts =  (int) ((EdgeSwitchPort - (Math.round(EdgeSwitchPort * 0.6) + Math.round(EdgeSwitchPort * 0.3))) * AggSwitchPort * RootSwitchPort); // 8 CPU, 8GB Ram
 		long total_hosts = high_cpu_hosts + hig_ram_hosts + mid_cpu_ram_hosts;
-		System.out.println("config:"+total_hosts+"="+high_cpu_hosts +","+ hig_ram_hosts+"," + mid_cpu_ram_hosts);
+		//System.out.println("config:"+total_hosts+"="+high_cpu_hosts +","+ hig_ram_hosts+"," + mid_cpu_ram_hosts);
 		for (int i = 0; i <high_cpu_hosts; i++) { 
 			List<Pe> peList = new ArrayList<Pe>();
 			peList.add(new Pe(0, new PeProvisionerSimple(mips)));  
@@ -198,9 +209,8 @@ public class ManageDatacenter {
 					storageList,
 					0);
 			
-			datacenter.VmAllcPlcyTyp = DCMngUtility.VM_ALLC_PLCY_CLUSTER;
+			datacenter.VmAllcPlcyTyp = NetworkConstants.VM_ALLC_PLCY_CLUSTER;
 			
-		
 
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -303,8 +313,50 @@ public class ManageDatacenter {
 				}
 				}  
 		 }
+		//**************define storages*******
+		 // each two agg switch have one storage rack
+		 List<NetStorageHost> storageHostList = new ArrayList<NetStorageHost>();
+		for (int as = 0; as < numOfAggSwitch; as+=2) { 
+			StorageSwitch storageSW = new StorageSwitch("Storage"+as+1, NetworkConstants.EDGE_LEVEL, datacenter);
+		    storageSW.switching_delay = SwitchingDelayEdge;
+		    storageSW.numport = NumSrorageInRack;
+			storageSW.downlinkbandwidth = BandWidthEdgeStorage;
+			storageSW.uplinkbandwidth = BandWidthEdgeAgg;
+			for(int s=0; s<NumSrorageInRack;s++){
+				NetStorageHost storageHost = createStorageHost();
+				storageHost.sw = storageSW;
+				storageHost.setDatacenter(datacenter);
+				storageSW.storagelist.put(storageHost.getId(), storageHost);
+				datacenter.Storagelist.put(storageHost.getId(), storageHost);
+				storageHostList.add(storageHost);
+				System.out.println("storage ID :" + storageHost.getId()+"connect to switch :" + storageSW.getName());
+				}
+			storageSW.uplinkswitches.add(aggswitch[as]);
+			aggswitch[as].downlinkswitches.add(storageSW);
+			aggswitch[as].numport++;
+			datacenter.Switchlist.put(storageSW.getId(), storageSW);
+		}
+		
+		//*************************************
 		////
 		return datacenter;
+	}
+	public NetStorageManager createStorageMgr(String name,Map<Integer, NetStorageHost> storageHostList,String mapperPath){
+		NetStorageManager storageManager = null;
+		List<NetStoragePool> poolList = new ArrayList<NetStoragePool>();
+		try {
+			storageManager = new NetStorageManager(name);
+			// define storage pool and rule
+			NetStoragePoolRuleSimple rlueSimple = new NetStoragePoolRuleSimple(storageHostList, mapperPath);
+			NetStoragePool pool01 = new NetStoragePool("pool001",3,rlueSimple);
+			poolList.add(pool01);
+			storageManager.setStoragePoolList(poolList);
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		return storageManager;
 	}
 	public NetDatacenterBroker createBroker(String brokerName) {
 		NetDatacenterBroker broker = null;
@@ -315,5 +367,38 @@ public class ManageDatacenter {
 			return null;
 		}
 		return broker;
+	}
+	
+	private  NetStorageHost createStorageHost(){
+		List<Pe> peList = new ArrayList<Pe>();
+		int mips = 500 ; 
+		peList.add(new Pe(0, new PeProvisionerSimple(mips)));
+		int ram = 8192; // host memory (MB) = 8GB
+		long totstorage = 0; // host storage
+		long bw = BandWidthEdgeStorage;
+		List<NetHarddriveStorage> storageDriveList = new ArrayList<NetHarddriveStorage>();
+		double hardCapasity = 500000; // hard drive capacity in MB = 500GB
+		double avgSeekTime = 0.09;
+		for(int i=0; i<20 ; i++){
+			try {
+				storageDriveList.add(new NetHarddriveStorage(NetworkConstants.currentHardIdndex,("OSD_"+NetworkConstants.currentHardIdndex),hardCapasity,avgSeekTime));
+				NetworkConstants.currentHardIdndex++;
+				totstorage = (long) (totstorage + hardCapasity);
+			} catch (ParameterException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+		NetStorageHost storage = new NetStorageHost(
+				NetworkConstants.currentStorageId,
+				new RamProvisionerSimple(ram),
+				new BwProvisionerSimple(bw),
+				totstorage,
+				peList,
+				storageDriveList,
+				new VmSchedulerTimeShared(peList));
+		NetworkConstants.currentStorageId++;
+		
+		return storage;
 	}
 }

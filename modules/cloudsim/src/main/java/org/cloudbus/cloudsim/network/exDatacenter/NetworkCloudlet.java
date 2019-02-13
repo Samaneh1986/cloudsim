@@ -75,6 +75,9 @@ public class NetworkCloudlet extends Cloudlet implements Comparable<Object> {
          */
 	public double starttime;
 	public int appId;
+	
+	public ArrayList<NetStorageBlock> inputData;
+	public int curDataindex;
 
 	public NetworkCloudlet(
 			int cloudletId,
@@ -97,8 +100,10 @@ public class NetworkCloudlet extends Cloudlet implements Comparable<Object> {
 				utilizationModelBw);
 
 		currStagenum = -1;
+		curDataindex = -1;
 		this.memory = memory;
 		stages = new ArrayList<TaskStage>();
+		inputData = new ArrayList<NetStorageBlock>();
 	}
 
 	@Override

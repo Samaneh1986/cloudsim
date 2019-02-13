@@ -118,9 +118,11 @@ public class VmAllocationPolicyGreedy extends VmAllocationPolicy {
 			asw = (AggregateSwitch) esw.uplinkswitches.get(0);
 			int available_agg_hosts=0;
 			for(Switch csw : asw.downlinkswitches){
-				for(NetworkHost curhost : csw.hostlist.values()){
-					if(curhost.isSuitableForVm(vmList.get(0)))
-						available_agg_hosts++;
+				if(!csw.getName().startsWith("S")){
+					for(NetworkHost curhost : csw.hostlist.values()){
+						if(curhost.isSuitableForVm(vmList.get(0)))
+							available_agg_hosts++;
+					}
 				}
 			}
 			if(vmList.size() > available_agg_hosts)
@@ -248,8 +250,10 @@ private void create_distance_matrix(Switch rsw){
 	    	}
 	    else if (rsw.level == NetworkConstants.Agg_LEVEL){
 		for(Switch sw : rsw.downlinkswitches){
-			for(NetworkHost host : sw.hostlist.values()){
-					host_list.add(host);
+			if(!sw.getName().startsWith("S")){
+				for(NetworkHost host : sw.hostlist.values()){
+						host_list.add(host);
+				}
 			}
 		}
     	}

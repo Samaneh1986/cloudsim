@@ -58,6 +58,9 @@ public class HostPacket {
          * The time the packet was received.
          */
 	double recievetime;
+	
+	int isLastPkt;
+	int storageId;
 
 	public HostPacket(
 			int sender,
@@ -75,5 +78,7 @@ public class HostPacket {
 		this.recievetime = recievetime;
 		virtualrecvid = vrvd;
 		virtualsendid = vsnd;
+		this.isLastPkt = 0;
+		this.storageId = -1;
 	}
 }
