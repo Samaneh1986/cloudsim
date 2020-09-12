@@ -3,6 +3,11 @@
 	<name>cloudsim</name>
 	<comment></comment>
 	<projects>
+		<project>cloudsim-examples</project>
+		<project>cloudsim(1)</project>
+		<project>distribution</project>
+		<project>documentation</project>
+		<project>modules</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>

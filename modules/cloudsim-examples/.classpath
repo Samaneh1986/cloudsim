@@ -27,6 +27,7 @@
 			<attribute name="maven.pomderived" value="true"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="lib" path="/Users/samaneh/Documents/workspace/files/cloudsim/modules/cloudsim-examples/src/main/java/org/cloudbus/cloudsim/examples/Vmp_Prj/jsonDS/json-simple-1.1.1.jar"/>
+	<classpathentry kind="lib" path="/home/gwdg/eclipse-workspace/cloudsim-examples/src/main/java/org/cloudbus/cloudsim/examples/Vmp_Prj/jsonDS/json-simple-1.1.1.jar"/>
+	<classpathentry kind="lib" path="/home/gwdg/eclipse-workspace/clp-java-1.16.11-full.jar"/>
 	<classpathentry kind="output" path="target/classes"/>
 </classpath>

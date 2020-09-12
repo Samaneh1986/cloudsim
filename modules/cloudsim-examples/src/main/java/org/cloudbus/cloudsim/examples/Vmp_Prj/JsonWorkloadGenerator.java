@@ -27,13 +27,23 @@ public class JsonWorkloadGenerator {
 	private int cldNO;
 	
 	private int brokerId;
-	private int predefined_stages = 3;
+	private int predefined_stages = 0;
+	
+	private int first_exe_stages = 0;
 	
 	public JsonWorkloadGenerator(String datasetPathInput){
 		this.datasetPath = datasetPathInput;
 		dataset = new JsonDataset(datasetPath);
 		applicatonList = new ArrayList<AppCloudlet>();
-		DCMngUtility.appClistIndex = new HashMap<Integer, ArrayList<Integer>>();
+		if (DCMngUtility.appClistIndex == null)
+		   DCMngUtility.appClistIndex = new HashMap<Integer, ArrayList<Integer>>();
+		else
+			DCMngUtility.appClistIndex.clear(); 
+		
+		if(DCMngUtility.HasStorageArea)
+			predefined_stages = 3;
+		else
+			predefined_stages = 1;
 	}
 	
 	//.........function to create a list of application..............
@@ -112,8 +122,28 @@ public class JsonWorkloadGenerator {
 		// create new stage based on dataset info
 		//for execution satge we add a stage
 		if(this.dataset.stageTyp.equals("data_execute")){
-			cl.stages.remove(0);
-			cl.stages.add(new TaskStage(NetworkConstants.EXECUTION, 0, Math.round(this.dataset.exec_time*1000),0, 0, 0, 0));
+			if(first_exe_stages == 0){
+				cl.stages.remove(0);
+				cl.stages.add(new TaskStage(NetworkConstants.EXECUTION, 0, Math.round(this.dataset.exec_time*1000),0, 0, 0, 0));
+				first_exe_stages = 1;
+			}
+			else{
+				int resiverId=-1;
+				double dataMB = Math.round(this.dataset.exec_time*1000);
+				
+				if(app.SendDataTo.get(Integer.valueOf(dataset.cloudletId))==null){ // first stage for current cloudlet
+					Map<int[],Double> info = new HashMap<int[],Double>();
+					info.put(new int[]{(int) cl.numStage,resiverId}, dataMB); 
+				    app.SendDataTo.put(Integer.valueOf(dataset.cloudletId),info);
+				}
+				else{
+					int lastStage = app.SendDataTo.get(Integer.valueOf(dataset.cloudletId)).size() + predefined_stages;
+					if(cl.numStage<lastStage)
+						cl.numStage = lastStage;
+					app.SendDataTo.get(Integer.valueOf(dataset.cloudletId)).put(new int[]{(int) cl.numStage,resiverId}, dataMB);
+				}
+				cl.numStage++;
+			}
 			//cl.numStage++;
 			return true;
 		}
@@ -121,19 +151,35 @@ public class JsonWorkloadGenerator {
 		//for data transferring stage we add a record in application map
 		int resiverId=this.dataset.rcv_clId;
 		double dataMB = this.dataset.data_transfered;
+		//if(cl.getCloudletId() == 1)
+		//	System.out.println("for cl 1 :");
 		if(dataMB>0){
 			if(app.SendDataTo.get(Integer.valueOf(dataset.cloudletId))==null){ // first data transferring stage for current cloudlet
 				Map<int[],Double> info = new HashMap<int[],Double>();
 				info.put(new int[]{(int) cl.numStage,resiverId}, dataMB); 
 			    app.SendDataTo.put(Integer.valueOf(dataset.cloudletId),info);
+				if(cl.getCloudletId() == 1)
+					System.out.println("code 001: stage added for "+dataset.cloudletId+"," +  cl.numStage);
 			}
 			else{
+				int lastStage = app.SendDataTo.get(Integer.valueOf(dataset.cloudletId)).size() + predefined_stages;
+				if(cl.numStage<lastStage)
+					cl.numStage = lastStage;
 				app.SendDataTo.get(Integer.valueOf(dataset.cloudletId)).put(new int[]{(int) cl.numStage,resiverId}, dataMB);
+				if(cl.getCloudletId() == 1)
+					System.out.println("code 002: stage added for "+dataset.cloudletId+","  +  cl.numStage);
 			}
 			cl.numStage++;
 			//create a data recieve stage
-			if(app.clist.size() > resiverId){
-				NetworkCloudlet rcp_cl = app.clist.get(resiverId);
+			
+			int foundIndex = -1; // check if related cloudlet has alreade been created
+    		for(int ix=0 ; ix<DCMngUtility.appClistIndex.get(app.appID).size(); ix++){
+    			if(DCMngUtility.appClistIndex.get(app.appID).get(ix)==resiverId)
+    				foundIndex = ix;
+    		}
+			//if(app.clist.size() > resiverId){
+			if(foundIndex > -1){//send data to a cloudlet which is created before
+				NetworkCloudlet rcp_cl = app.clist.get(foundIndex);
 				if(app.SendDataTo.get(resiverId) == null){
 					Map<int[],Double> info = new HashMap<int[],Double>();
 					info.put(new int[]{(int) rcp_cl.numStage,(Integer.valueOf(dataset.cloudletId))}, (-1 * dataMB));
@@ -150,11 +196,14 @@ public class JsonWorkloadGenerator {
 					Map<int[],Double> info = new HashMap<int[],Double>();
 					info.put(new int[]{ predefined_stages, (Integer.valueOf(dataset.cloudletId))},  (-1 * dataMB)); 
 				    app.SendDataTo.put(resiverId,info);
-				    }
+				    if(app.appID==0 && resiverId == 3)
+						System.out.println("code 003: stage added for 3 ,"+predefined_stages);
+				}
 				else{
 					int lastStage = app.SendDataTo.get(resiverId).size() + predefined_stages;
 					app.SendDataTo.get(resiverId).put(new int[]{(int) lastStage,Integer.valueOf(dataset.cloudletId)}, (-1 * dataMB));
-					
+					if(app.appID==0 && resiverId == 3)
+						System.out.println("code 004: stage added for 3 ,"+lastStage);
 				} 
 			
 			}
@@ -176,10 +225,20 @@ public class JsonWorkloadGenerator {
 				utilizationModel,
 				utilizationModel);
 		// create new cloudlet based on dataset info
-		cl.stages.add(new TaskStage(NetworkConstants.EXECUTION, 0, 1000, 0, 10, 0, 0));
-		cl.stages.add(new TaskStage(NetworkConstants.INPUT_READ, this.dataset.fileSize, 0, 1, 0, 0, 0));
-		cl.stages.add(new TaskStage(NetworkConstants.INPUT_READ_WAIT, this.dataset.fileSize, 0, 2, 0, 0, 0));
+		cl.stages.add(new TaskStage(NetworkConstants.EXECUTION, 0, 1000, 0, 1, 0, 0));
+		first_exe_stages = 0;
+		//cl.numStage = predefined_stages;
+		//if(this.dataset.fileSize>0){
+		if(DCMngUtility.HasStorageArea){
+			cl.stages.add(new TaskStage(NetworkConstants.INPUT_READ, this.dataset.fileSize, 0, 1, 0, 0, 0));
+			cl.stages.add(new TaskStage(NetworkConstants.INPUT_READ_WAIT, this.dataset.fileSize, 0, 2, 0, 0, 0));
+		}
 		cl.numStage = predefined_stages;//equal to predefined stages (first exec + 2 inputs)
+		//}
+		//else{
+		//	predefined_stages = 1;
+		//	cl.numStage = predefined_stages;
+		//}
 		return cl;
 	}
 	
@@ -195,18 +254,18 @@ public class JsonWorkloadGenerator {
 
 	public  Map<Integer,List<NetworkVm>>  createVMs(int brokerId, List<AppCloudlet> appList){
 		Map<Integer,List<NetworkVm>> vmlistReq = new HashMap<Integer,List<NetworkVm>>();
-		int mips = 100;
-    	long size = 300; //image size (MB)
-    	int ram = 0; //vm memory (MB)
+		int mips = 1000;
+    	long size = 500; //image size (MB)
+    	int ram = 2048; //vm memory (MB)
     	long bw = 5; // BW in MB  ---> no effect
-    	int pesNumber = 0; //number of cpus
+    	int pesNumber = 2; //number of cpus
     	String vmm = "Xen"; //VMM name  ---> no effect
     	
     	int totalVMs = 0;
     	for(AppCloudlet app : appList){ 
     		for(NetworkCloudlet cl : app.clist){ 
     			if(cl.memory > ram)
-    				ram = Math.round(cl.memory);
+    				ram = (int) cl.memory ;
     			if(cl.getNumberOfPes() > pesNumber)
     				pesNumber = cl.getNumberOfPes();
     		}

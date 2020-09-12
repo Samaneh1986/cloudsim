@@ -28,28 +28,28 @@ public class VmAllocationPolicyBestFit extends VmAllocationPolicy {
 		int requiredPes = vm.getNumberOfPes();
 		int min_pes = Integer.MAX_VALUE;
 		NetworkHost selectedHost = null;
-		boolean result = false; 
+		boolean result = false;
 		boolean repeatedHost = false;
 		List<Host> l_host = this.getHostList();
-		for(Host host : l_host){ 
+		for (Host host : l_host) {
 			repeatedHost = false;
-			if(usedHosts.get(String.valueOf(vm.getUserId()))!= null && usedHosts.get(String.valueOf(vm.getUserId())).contains(String.valueOf(host.getId()))){
+			if (usedHosts.get(String.valueOf(vm.getUserId())) != null
+					&& usedHosts.get(String.valueOf(vm.getUserId())).contains(String.valueOf(host.getId()))) {
 				repeatedHost = true;
 			}
-			if(repeatedHost == false && requiredPes <= host.getNumberOfFreePes() ){
-				if(host.getNumberOfFreePes() < min_pes && host.isSuitableForVm(vm)){
+			if (repeatedHost == false && requiredPes <= host.getNumberOfFreePes()) {
+				if (host.getNumberOfFreePes() < min_pes && host.isSuitableForVm(vm)) {
 					min_pes = host.getNumberOfFreePes();
 					selectedHost = (NetworkHost) host;
 				}
 			}
 		}
 		result = selectedHost.vmCreate(vm);
-		if(usedHosts.get(String.valueOf(vm.getUserId())) != null){
-			usedHosts.get(String.valueOf(vm.getUserId())).add( String.valueOf(selectedHost.getId()));
-		}
-		else{
+		if (usedHosts.get(String.valueOf(vm.getUserId())) != null) {
+			usedHosts.get(String.valueOf(vm.getUserId())).add(String.valueOf(selectedHost.getId()));
+		} else {
 			usedHosts.put(String.valueOf(vm.getUserId()), new ArrayList<String>());
-			usedHosts.get(String.valueOf(vm.getUserId())).add( String.valueOf(selectedHost.getId()));
+			usedHosts.get(String.valueOf(vm.getUserId())).add(String.valueOf(selectedHost.getId()));
 		}
 
 		getVmTable().put(vm.getUid(), selectedHost);
@@ -59,12 +59,12 @@ public class VmAllocationPolicyBestFit extends VmAllocationPolicy {
 	@Override
 	public boolean allocateHostForVm(Vm vm, Host host) {
 		// TODO Auto-generated method stub
-		if (host.vmCreate(vm)) { // if vm has been successfully created in the host  
-			usedHosts.get(String.valueOf(vm.getUserId())).add( String.valueOf(host.getId()));
+		if (host.vmCreate(vm)) { // if vm has been successfully created in the host
+			usedHosts.get(String.valueOf(vm.getUserId())).add(String.valueOf(host.getId()));
 			getVmTable().put(vm.getUid(), host);
 			return true;
 		}
- 
+
 		return false;
 	}
 
@@ -73,50 +73,49 @@ public class VmAllocationPolicyBestFit extends VmAllocationPolicy {
 		// TODO Auto-generated method stub
 		boolean result = false;
 		usedHosts.clear();
-		for(Vm vm : vmList){
+		for (Vm vm : vmList) {
 			int requiredPes = vm.getNumberOfPes();
 			int min_pes = Integer.MAX_VALUE;
-			NetworkHost selectedHost = null; 
+			NetworkHost selectedHost = null;
 			boolean repeatedHost = false;
 			List<Host> l_host = this.getHostList();
-			for(Host host : l_host){ 
+			for (Host host : l_host) {
 				repeatedHost = false;
-				if(usedHosts.get(String.valueOf(vm.getUserId()))!= null && usedHosts.get(String.valueOf(vm.getUserId())).contains(String.valueOf(host.getId()))){
+				if (usedHosts.get(String.valueOf(vm.getUserId())) != null
+						&& usedHosts.get(String.valueOf(vm.getUserId())).contains(String.valueOf(host.getId()))) {
 					repeatedHost = true;
 				}
-				if(repeatedHost == false && requiredPes <= host.getNumberOfFreePes() ){
-					if(host.getNumberOfFreePes() < min_pes && host.isSuitableForVm(vm)){
+				if (repeatedHost == false && requiredPes <= host.getNumberOfFreePes()) {
+					if (host.getNumberOfFreePes() < min_pes && host.isSuitableForVm(vm)) {
 						min_pes = host.getNumberOfFreePes();
 						selectedHost = (NetworkHost) host;
 					}
 				}
 			}
-			if(selectedHost != null){
-			result = selectedHost.vmCreate(vm);
-			getVmTable().put(vm.getUid(), selectedHost);
-			if(usedHosts.get(String.valueOf(vm.getUserId())) != null){
-				usedHosts.get(String.valueOf(vm.getUserId())).add( String.valueOf(selectedHost.getId()));
-			}
-			else{
-				usedHosts.put(String.valueOf(vm.getUserId()), new ArrayList<String>());
-				usedHosts.get(String.valueOf(vm.getUserId())).add( String.valueOf(selectedHost.getId()));
-			}
-			}
-			else{
+			if (selectedHost != null) {
+				result = selectedHost.vmCreate(vm);
+				getVmTable().put(vm.getUid(), selectedHost);
+				if (usedHosts.get(String.valueOf(vm.getUserId())) != null) {
+					usedHosts.get(String.valueOf(vm.getUserId())).add(String.valueOf(selectedHost.getId()));
+				} else {
+					usedHosts.put(String.valueOf(vm.getUserId()), new ArrayList<String>());
+					usedHosts.get(String.valueOf(vm.getUserId())).add(String.valueOf(selectedHost.getId()));
+				}
+			} else {
 				result = false;
 				break;
 			}
 		}
-		Map<String, Object> finalCnd =  new HashMap<String, Object>();
+		Map<String, Object> finalCnd = new HashMap<String, Object>();
 		List<Map<String, Object>> finalResult = new ArrayList<Map<String, Object>>();
-		if(result == true)
-			finalCnd.put("OK","SUCCESS");
-		else{
-			for(Vm vm : vmList){
-				if(vm.getHost() != null)
+		if (result == true)
+			finalCnd.put("OK", "SUCCESS");
+		else {
+			for (Vm vm : vmList) {
+				if (vm.getHost() != null)
 					vm.getHost().vmDestroy(vm);
 			}
-			finalCnd.put("ER","FAILED");
+			finalCnd.put("ER", "FAILED");
 		}
 		finalResult.add(finalCnd);
 		return finalResult;
@@ -125,17 +124,15 @@ public class VmAllocationPolicyBestFit extends VmAllocationPolicy {
 	@Override
 	public void deallocateHostForVm(Vm vm) {
 		// TODO Auto-generated method stub
-		Host host = getVmTable().remove(vm.getUid()); 
-		try{ 
+		Host host = getVmTable().remove(vm.getUid());
+		try {
 			if (host != null) {
-				host.vmDestroy(vm); 
+				host.vmDestroy(vm);
 				usedHosts.remove(String.valueOf(vm.getUserId()), String.valueOf(host.getId()));
-				System.out.println("VM "+vm.getId()+" is removed from Host "+host.getId());
-			}
-			}
-			catch(NullPointerException e){
-				e.printStackTrace();
-			}
+				}
+		} catch (NullPointerException e) {
+			e.printStackTrace();
+		}
 	}
 
 	@Override
@@ -147,14 +144,16 @@ public class VmAllocationPolicyBestFit extends VmAllocationPolicy {
 	@Override
 	public Host getHost(int vmId, int userId) {
 		// TODO Auto-generated method stub
-		
+
 		return getVmTable().get(Vm.getUid(userId, vmId));
 	}
+
 	public Map<String, Host> getVmTable() {
 		return vmTable;
-	} 
+	}
+
 	protected void setVmTable(Map<String, Host> vmTable) {
 		this.vmTable = vmTable;
-	} 
+	}
 
 }

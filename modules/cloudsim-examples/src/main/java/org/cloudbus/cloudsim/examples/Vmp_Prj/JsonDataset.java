@@ -94,8 +94,25 @@ public class JsonDataset {
 			this.exec_time = Math.round(time);
 				
 			this.length=40000;
-			this.fileSize=500;
-			this.outputSize=500;
+			if(row.get("input")!= null){
+				   double input = Double.valueOf(String.valueOf(row.get("input"))).doubleValue()/10000;//in B
+				   this.fileSize = Math.round(input);
+				}
+				else{
+					//this.fileSize = Math.round(Math.random() * 500) ;
+					this.fileSize = 0 ;
+				}
+			
+			if(row.get("output")!= null){
+				   double output = Double.valueOf(String.valueOf(row.get("output"))).doubleValue()/10000;//in B
+				   this.outputSize = Math.round(output);
+				}
+				else{
+					//this.outputSize = Math.round(Math.random() * 500) ;
+					this.outputSize = 0 ;
+				}
+			//this.fileSize = 0 ;
+			//this.outputSize = 0 ;
 			
 			return true;
 		}

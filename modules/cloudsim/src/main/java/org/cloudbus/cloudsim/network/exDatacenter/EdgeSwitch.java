@@ -54,7 +54,8 @@ public class EdgeSwitch extends Switch {
     public double tot_ram = 0; // the total ram of connected hosts
     public double tot_pe = 0; // the total process of connected hosts
     public double tot_free_pe = 0; // the total free process of connected hosts
-	
+    
+    
 	public EdgeSwitch(String name, int level, NetworkDatacenter dc) {
 		super(name, level, dc);
 		uplinkswitchpktlist = new HashMap<Integer, List<NetworkPacket>>();
@@ -73,7 +74,22 @@ public class EdgeSwitch extends Switch {
 		//
 		// int src=ev.getSource();
 		NetworkPacket hspkt = (NetworkPacket) ev.getData();
-		int recvVMid = hspkt.pkt.reciever;
+		if(hspkt.pkt.storageId > -1 && hspkt.pkt.virtualrecvid == -1){
+			//System.out.println("output packet sent from edge switch ...");
+			// if it is a storage packet to be written no need to check host
+			NetworkConstants.totalInputReadTime+= switching_delay;
+			CloudSim.cancelAll(getId(), new PredicateType(CloudSimTags.Network_Event_send));
+			schedule(getId(), switching_delay, CloudSimTags.Network_Event_send);
+			Switch sw = bestUpSwitch();
+			List<NetworkPacket> pktlist = uplinkswitchpktlist.get(sw.getId());
+			if (pktlist == null) {
+				pktlist = new ArrayList<NetworkPacket>();
+				uplinkswitchpktlist.put(sw.getId(), pktlist);
+			}
+			pktlist.add(hspkt);
+			return;
+		}
+		int recvVMid = hspkt.pkt.reciever; 
 		NetworkConstants.totaldatatransferTime += switching_delay;
 		CloudSim.cancelAll(getId(), new PredicateType(CloudSimTags.Network_Event_send));
 		schedule(getId(), switching_delay, CloudSimTags.Network_Event_send);
@@ -106,7 +122,7 @@ public class EdgeSwitch extends Switch {
 		// ASSUMPTION EACH EDGE is Connected to one aggregate level switch
 		// if there are more than one Aggregate level switch one need to modify following code
 
-		Switch sw = uplinkswitches.get(0);
+		Switch sw = bestUpSwitch();
 		List<NetworkPacket> pktlist = uplinkswitchpktlist.get(sw.getId());
 		if (pktlist == null) {
 			pktlist = new ArrayList<NetworkPacket>();
@@ -158,6 +174,26 @@ public class EdgeSwitch extends Switch {
 			}
 		}
 
+	}
+	
+	private Switch bestUpSwitch(){
+		Switch bestSW = null;
+		int minTraffic = Integer.MAX_VALUE;
+		for(Switch sw : uplinkswitches){
+			if(uplinkswitchpktlist.get(sw.getId())==null){
+				bestSW = sw;
+				minTraffic = 0;
+				break;
+			}
+			else{
+				if(uplinkswitchpktlist.get(sw.getId()).size() < minTraffic)
+				{
+					bestSW = sw;
+					minTraffic = uplinkswitchpktlist.get(sw.getId()).size();
+				}
+			}
+		}
+		return bestSW;
 	}
 	
 }

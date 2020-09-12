@@ -38,7 +38,8 @@ public class NetworkConstants {
 	public static final int WAIT_RECV = 2;
 	public static final int INPUT_READ = 3;
 	public static final int INPUT_READ_WAIT = 4;
-	public static final int OUTPUT_WRITE = 5;
+	public static final int OUTPUT_STORAGE_REQ = 5;
+	public static final int OUTPUT_WRITE = 6;
 	public static final int FINISH = -2;
 
 	/** Number of switches at root level. */
@@ -47,6 +48,8 @@ public class NetworkConstants {
 	public static final int Agg_LEVEL = 1;
         /** Number of switches at edge level. */
 	public static final int EDGE_LEVEL = 2;
+    /** Number of switches at edge level. */
+public static final int STRG_LEVEL = 3;
 
 	public static final int PES_NUMBER = 4;
 	public static final int FILE_SIZE = 300;
@@ -79,7 +82,10 @@ public class NetworkConstants {
 
 	public static int totaldatatransfer = 0;
 	public static double totaldatatransferTime = 0;
+	public static double totalSubmittedCloudlet = 0;
 	public static double interRackDataTransfer = 0;
+	public static double totalInputReadTime = 0;
+	public static double totalExecTime = 0;
 
 	/***************************************/
 	public static final int VM_ALLC_PLCY_CLUSTER = 0;

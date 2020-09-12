@@ -27,5 +27,6 @@
 			<attribute name="maven.pomderived" value="true"/>
 		</attributes>
 	</classpathentry>
+	<classpathentry kind="lib" path="/Users/samaneh/Documents/workspace/files/clp-java-1.16.11-full.jar"/>
 	<classpathentry kind="output" path="target/classes"/>
 </classpath>

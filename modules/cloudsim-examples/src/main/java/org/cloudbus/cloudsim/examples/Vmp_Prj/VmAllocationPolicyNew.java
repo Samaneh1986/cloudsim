@@ -27,7 +27,7 @@ import org.cloudbus.cloudsim.network.exDatacenter.Switch;
  * @author samaneh
  *
  */
-public class VmAllocationPolicyTDB2 extends VmAllocationPolicy {
+public class VmAllocationPolicyNew extends VmAllocationPolicy {
 	
 	private NetworkDatacenter DC;  
 	private List<NetworkHost> host_list;
@@ -36,7 +36,7 @@ public class VmAllocationPolicyTDB2 extends VmAllocationPolicy {
 	private Map<String, Host> vmTable; // VM Id to Host mapping
 	
 	
-	public VmAllocationPolicyTDB2(List<NetworkHost> list) {
+	public VmAllocationPolicyNew(List<NetworkHost> list) {
 		super(list);  
 		this.host_list =  new ArrayList<NetworkHost>(); 
 		
@@ -103,9 +103,10 @@ public class VmAllocationPolicyTDB2 extends VmAllocationPolicy {
 		List<Map<String, Object>> result = new ArrayList<Map<String, Object>>();
 		List<NetworkVm> reqVMs = (List<NetworkVm>) vmList;
 		
-		System.out.println("request for next "+vmList.size()+" VMs from Id "+vmList.get(0).getId());
-		Switch root_sw = phaseOne( reqVMs);
-		create_distance_matrix(root_sw, reqVMs);
+		//System.out.println("request for next "+vmList.size()+" VMs starting from Id "+vmList.get(0).getId());
+		this.host_list = phaseOne(reqVMs);
+		//System.out.println("total candidate hosts: "+this.host_list.size());
+		create_distance_matrix();
 		boolean rslt = phaseTwo(reqVMs);
 		
 		/* In the case of SUCCESS */
@@ -157,33 +158,13 @@ public class VmAllocationPolicyTDB2 extends VmAllocationPolicy {
 	}
 
 	/************* Other required functions for this placement policy **************/
-	private Switch phaseOne ( List<NetworkVm> vmList){
-	   // Switch sw = DCMngUtility.findSuitableSwitchForVmList(DC , vmList);
-		Switch sw = DCMngUtility.findLeafSwitchForVmList(DC , vmList);
-		if(sw.getName().equals("dummy"))
-			System.out.println("selected dummy switch with rack no :"+sw.downlinkswitches.size());
-		//Switch sw = DC.Switchlist.get(switch_id);
-		return sw;
+	private List<NetworkHost> phaseOne ( List<NetworkVm> vmList){
+		List<NetworkHost> selectedHosts = DCMngUtility.findSuitableHostGroup(DC , vmList);
+		return selectedHosts;
 	}
-	private void create_distance_matrix(Switch rsw, List<NetworkVm> vmList){ 
+	private void create_distance_matrix(){ 
 		
-    	if (rsw.getName().equals("dummy")){
-    		for(Switch sw : rsw.downlinkswitches){ 
-	    			for(NetworkHost host : sw.hostlist.values()){ 
-	    				if(host.isSuitableForVm(vmList.get(0)))
-	    						host_list.add(host);
-	    			}
-	    			sw.uplinkswitches.remove(rsw); 
-    		}
-    		rsw.downlinkswitches.clear(); 
-    		
-        }
-    	else{
-    		for(NetworkHost host : rsw.hostlist.values()){
-    			if(host.isSuitableForVm(vmList.get(0)))
-						host_list.add(host);
-			}
-    	}
+		
 		// fill distance_matrix
 		distance_matrix = new double [host_list.size()][host_list.size()];
 		host_selected = new int [host_list.size()];  
@@ -208,21 +189,114 @@ public class VmAllocationPolicyTDB2 extends VmAllocationPolicy {
 		//HostPacket testp = new HostPacket(0,0,1.0,0.0,0.0,0,0);
 		//distance = DCMngUtility.computeDelay(host1, host2, testp);
 		
+		if(host1.sw.getId() == host2.sw.getId()) // hosts are connected to the same edge switch
+		{
 			double host1_link = host1.bytesTosendGlobalSize+1;
 			double host2_link = host2.bytesTosendGlobalSize+1;
 			if(host1.sw.bytesTohostSize!=null && host1.sw.bytesTohostSize.get(host1.getId())!=null)
 				host1_link=host1_link+host1.sw.bytesTohostSize.get(host1.getId());
 			if(host2.sw.bytesTohostSize!=null && host2.sw.bytesTohostSize.get(host2.getId())!=null)
 				host2_link=host2_link+host2.sw.bytesTohostSize.get(host2.getId());
-		if(host1.sw.getId() == host2.sw.getId()) // hosts are connected to the same edge switch
-		{
-				
-			distance = (host1_link)+
-					(host2_link);
+			double l_ij = ((host1_link/(host1.bandwidth))+(host2_link/(host2.bandwidth)))/2;
+		//	distance = 6 * Math.pow((((host1_link/(host1.bandwidth))+
+		//			(host2_link/(host2.bandwidth)))/2),6);
+			distance = Math.pow(l_ij, 0.5);
 		}
 		else{
-			distance = 4*((host1_link)+
-					(host2_link));
+			String edg1Name;
+			String edg2Name;
+			Switch aggSw = null;
+			for(Switch ns1  : host1.sw.uplinkswitches){ 
+				edg1Name = ns1.getName();
+				for(Switch ns2  : host2.sw.uplinkswitches){ 
+					edg2Name = ns2.getName();
+					if(edg1Name.equalsIgnoreCase(edg2Name))
+						aggSw = ns2;
+				}
+			}
+			if(aggSw!=null)	
+			{ // hosts are connected to the same aggregation switch
+			double fraction =  host1.bandwidth / host1.sw.uplinkbandwidth;
+			double packet_in_src_link = 1.0;
+			double packet_in_dst_link = 1.0;
+			double host1_link = host1.bytesTosendGlobalSize+1;
+			double host2_link = host2.bytesTosendGlobalSize+1;
+			if(host1.sw.bytesTohostSize!=null && host1.sw.bytesTohostSize.get(host1.getId())!=null)
+				host1_link=host1_link+host1.sw.bytesTohostSize.get(host1.getId());
+			if(host2.sw.bytesTohostSize!=null && host2.sw.bytesTohostSize.get(host2.getId())!=null)
+				host2_link=host2_link+host2.sw.bytesTohostSize.get(host2.getId());
+			
+			if(aggSw.bytesToDownSwitchSize!=null && aggSw.bytesToDownSwitchSize.get(host1.sw.getId()) != null)
+				packet_in_src_link=packet_in_src_link+ aggSw.bytesToDownSwitchSize.get(host1.sw.getId());
+			if(aggSw.bytesToDownSwitchSize!=null && aggSw.bytesToDownSwitchSize.get(host2.sw.getId()) != null)
+				packet_in_dst_link=packet_in_dst_link+ aggSw.bytesToDownSwitchSize.get(host2.sw.getId());
+			if(host1.sw.bytesToUpSwitchSize!=null && host1.sw.bytesToUpSwitchSize.get(aggSw.getId())!=null)
+				packet_in_src_link=packet_in_src_link+host1.sw.bytesToUpSwitchSize.get(aggSw.getId());
+			if(host2.sw.bytesToUpSwitchSize!=null && host2.sw.bytesToUpSwitchSize.get(aggSw.getId())!=null)
+				packet_in_dst_link=packet_in_dst_link+host2.sw.bytesToUpSwitchSize.get(aggSw.getId());
+			
+			double l_ij =(((host1_link/(host1.bandwidth))+
+					((packet_in_src_link/(host1.sw.uplinkbandwidth))*fraction)+
+					((packet_in_dst_link/(host2.sw.uplinkbandwidth))*fraction)+
+					(host2_link/(host2.bandwidth)))/4);
+			/*distance = 12 * Math.pow((((host1_link/(host1.bandwidth))+
+					((packet_in_src_link/(host1.sw.uplinkbandwidth))*fraction)+
+					((packet_in_dst_link/(host2.sw.uplinkbandwidth))*fraction)+
+					(host2_link/(host2.bandwidth)))/4),3);*/
+			distance = Math.pow(l_ij, 0.25);
+		}
+			else{// hosts are connected throught the root
+				Switch aggSw1 = host1.sw.uplinkswitches.get(0);
+				Switch aggSw2 = host2.sw.uplinkswitches.get(0);
+				Switch coreSw = host1.sw.uplinkswitches.get(0).uplinkswitches.get(0);
+				double fraction =  host1.bandwidth / host1.sw.uplinkbandwidth;
+				double fractionRoot =  host1.bandwidth / host1.sw.uplinkswitches.get(0).uplinkbandwidth;
+				double packet_in_src_link = 1.0;
+				double packet_in_dst_link = 1.0;
+				double from_root_to_src_agg = 1.0;
+				double from_root_to_dest_agg = 1.0;
+				double host1_link = host1.bytesTosendGlobalSize+1;
+				double host2_link = host2.bytesTosendGlobalSize+1;
+				
+				if(host1.sw.bytesTohostSize!=null && host1.sw.bytesTohostSize.get(host1.getId())!=null)
+					host1_link=host1_link+host1.sw.bytesTohostSize.get(host1.getId());
+				if(host2.sw.bytesTohostSize!=null && host2.sw.bytesTohostSize.get(host2.getId())!=null)
+					host2_link=host2_link+host2.sw.bytesTohostSize.get(host2.getId());
+				
+				if(aggSw1.bytesToDownSwitchSize!=null && aggSw1.bytesToDownSwitchSize.get(host1.sw.getId()) != null)
+					packet_in_src_link=packet_in_src_link+ aggSw1.bytesToDownSwitchSize.get(host1.sw.getId());
+				if(aggSw2.bytesToDownSwitchSize!=null && aggSw2.bytesToDownSwitchSize.get(host2.sw.getId()) != null)
+					packet_in_dst_link=packet_in_dst_link+ aggSw2.bytesToDownSwitchSize.get(host2.sw.getId());
+				if(host1.sw.bytesToUpSwitchSize!=null && host1.sw.bytesToUpSwitchSize.get(aggSw1.getId())!=null)
+					packet_in_src_link=packet_in_src_link+host1.sw.bytesToUpSwitchSize.get(aggSw1.getId());
+				if(host2.sw.bytesToUpSwitchSize!=null && host2.sw.bytesToUpSwitchSize.get(aggSw2.getId())!=null)
+					packet_in_dst_link=packet_in_dst_link+host2.sw.bytesToUpSwitchSize.get(aggSw2.getId());
+				
+				if(coreSw.bytesToDownSwitchSize!=null && coreSw.bytesToDownSwitchSize.get(host1.sw.uplinkswitches.get(0).getId())!=null)
+					from_root_to_src_agg =from_root_to_src_agg+ coreSw.bytesToDownSwitchSize.get(host1.sw.uplinkswitches.get(0).getId());
+				if(host1.sw.uplinkswitches.get(0).bytesToUpSwitchSize!=null && host1.sw.uplinkswitches.get(0).bytesToUpSwitchSize.get(coreSw.getId())!=null )
+					from_root_to_src_agg = from_root_to_src_agg + host1.sw.uplinkswitches.get(0).bytesToUpSwitchSize.get(coreSw.getId());
+				if(coreSw.bytesToDownSwitchSize!=null && coreSw.bytesToDownSwitchSize.get(host2.sw.uplinkswitches.get(0).getId())!=null)
+					from_root_to_dest_agg = from_root_to_dest_agg+coreSw.bytesToDownSwitchSize.get(host2.sw.uplinkswitches.get(0).getId());
+				if(host2.sw.uplinkswitches.get(0).bytesToUpSwitchSize!=null &&host2.sw.uplinkswitches.get(0).bytesToUpSwitchSize.get(coreSw.getId())!=null)	
+					from_root_to_dest_agg = from_root_to_dest_agg + host2.sw.uplinkswitches.get(0).bytesToUpSwitchSize.get(coreSw.getId());
+				
+				
+				double l_ij = (((host1_link/(host1_link+1))+
+						((packet_in_src_link/(packet_in_src_link+1))*fraction)+
+						((from_root_to_src_agg/(from_root_to_src_agg+1))*fractionRoot)+
+						((from_root_to_dest_agg/(from_root_to_dest_agg+1))*fractionRoot)+
+						((packet_in_dst_link/(packet_in_dst_link+1))*fraction)+
+						(host2_link/(host2_link+1)))/6);
+				/*distance = 18 * Math.pow((((host1_link/(host1_link+1))+
+						((packet_in_src_link/(packet_in_src_link+1))*fraction)+
+						((from_root_to_src_agg/(from_root_to_src_agg+1))*fractionRoot)+
+						((from_root_to_dest_agg/(from_root_to_dest_agg+1))*fractionRoot)+
+						((packet_in_dst_link/(packet_in_dst_link+1))*fraction)+
+						(host2_link/(host2_link+1)))/6),2);*/
+				distance = Math.pow(l_ij,0.17);
+			
+			}
 		}
 		
 	    return distance;
@@ -247,19 +321,11 @@ public class VmAllocationPolicyTDB2 extends VmAllocationPolicy {
 		}
 		// find Host with minimum traffic 
 		for(int i =0; i<host_list.size(); i++){
-			if(host_list.get(i).isSuitableForVm(firstVm) ){
-				for(int j =0; j<host_list.size(); j++)
-					System.out.print(this.distance_matrix[i][j]+"-");
-				System.out.println();
-			}
-		}
-		for(int i =0; i<host_list.size(); i++){
 			tmp = 0;
 			if(host_list.get(i).isSuitableForVm(firstVm) ){ 
 				for(int j =0; j<host_list.size(); j++){
 					tmp = tmp + distance_matrix[i][j];
 				}
-				//System.out.println("host , sw , cost :"+host_list.get(i).getId()+","+host_list.get(i).sw.getName()+","+tmp);
 				if(tmp < minTrafficCost){
 					minTrafficCost = tmp;
 					slctHostIx = i;
@@ -277,7 +343,7 @@ public class VmAllocationPolicyTDB2 extends VmAllocationPolicy {
 		remaine_vm.remove(firstVmId);
 		host_selected[slctHostIx] = 1;
 		getVmTable().put(firstVm.getUid(), host);  
-	    System.out.println("first placement : Vm Id , Host Id , SW :"+firstVm.getId()+","+host.getId()+","+host.sw.getName());
+	   // System.out.println("first placement : Vm Id , Host Id , UId :"+firstVm.getId()+","+host.getId()+","+firstVm.getUserId());
 	    // find suitable hosts for other VMs
 		minTrafficCost = Double.MAX_VALUE;
 		minPe = Integer.MAX_VALUE;
@@ -292,7 +358,6 @@ public class VmAllocationPolicyTDB2 extends VmAllocationPolicy {
 						for(int j =0; j<host_list.size(); j++){
 							tmp = tmp + (distance_matrix[i][j] * host_selected[j]);
 						}
-						System.out.println("host , sw , cost :"+host_list.get(i).getId()+","+host_list.get(i).sw.getName()+","+tmp);
 						if(tmp < minTrafficCost){
 							minTrafficCost = tmp;
 							slctHostIx = i;
@@ -325,6 +390,7 @@ public class VmAllocationPolicyTDB2 extends VmAllocationPolicy {
 					if(dvm.getHost() != null){
 						dvm.getHost().vmDestroy(dvm);}
 				}
+				System.out.println("The following placement failed");
 				return result;
 			}
 			host_selected[slctHostIx] = 1;
@@ -334,7 +400,7 @@ public class VmAllocationPolicyTDB2 extends VmAllocationPolicy {
 				System.out.println("The following placement failed");
 			getVmTable().put(vm.getUid(), host);
 		    //System.out.println("host with min cost of :"+minTrafficCost);
-		    System.out.println("The placement : Vm Id , Host Id,SW :"+vm.getId()+","+host.getId()+","+host.sw.getName());
+		   // System.out.println("The placement : Vm Id , Host Id,index :"+vm.getId()+","+host.getId()+","+slctHostIx);
 		    minTrafficCost = Double.MAX_VALUE;
 			slctHostIx = -1;
 		}

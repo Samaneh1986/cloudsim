@@ -49,6 +49,7 @@ import org.cloudbus.cloudsim.core.SimEvent;
  * @since CloudSim Toolkit 3.0
  */
 public class NetworkDatacenter extends Datacenter {
+	public int total_zone = 0;
 	private int err_hostid;
 	private int err_vmid;
 	private int err_usrid;
@@ -193,7 +194,15 @@ public class NetworkDatacenter extends Datacenter {
 		return result;
 	}
 	public boolean processVmListCreateNetwork(List<NetworkVm> vmList){
+		//NetworkConstants.totalSubmittedCloudlet += vmList.size();
+		long startTime = System.currentTimeMillis();
+		
 		List<Map<String, Object>> result = getVmAllocationPolicy().optimizeAllocation(vmList);
+		
+		long exeTime = System.currentTimeMillis() - startTime;
+		NetworkConstants.totalExecTime = (NetworkConstants.totalExecTime ) + exeTime;
+		//DCMngUtility.resultFile.print("("+NetworkConstants.totalSubmittedCloudlet +","+NetworkConstants.totalExecTime+")");
+		
 		if(result.get(0).get("OK") != null){ 
 			for(NetworkVm vm : vmList){
 				VmToSwitchid.put(vm.getId(), ((NetworkHost) vm.getHost()).sw.getId());

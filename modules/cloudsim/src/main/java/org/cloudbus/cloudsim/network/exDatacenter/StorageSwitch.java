@@ -35,6 +35,7 @@ import org.cloudbus.cloudsim.core.predicates.PredicateType;
  */
 public class StorageSwitch extends Switch {
 
+
 	/**
 	 * Instantiates a EdgeSwitch specifying switches that are connected to its downlink
 	 * and uplink ports, and corresponding bandwidths. 
@@ -84,23 +85,50 @@ public class StorageSwitch extends Switch {
 				int tosend = es.getKey();
 				List<NetworkPacket> hspktlist = es.getValue();
 				if (!hspktlist.isEmpty()) {
+					//System.out.println(" in SWITCH "+this.getName()+" time "+CloudSim.clock()+", total pkt:"+hspktlist.size());
 					// sharing bandwidth between packets
 					double avband = uplinkbandwidth / hspktlist.size();
 					Iterator<NetworkPacket> it = hspktlist.iterator();
 					while (it.hasNext()) {
 						NetworkPacket hspkt = it.next();
 						double delay = 1000 * hspkt.pkt.data / avband;
-						NetworkConstants.totaldatatransferTime += delay;
-					//	if(hspkt.pkt.hashCode()==504527234)
-					//		System.out.println("packet 504527234 in switch "+this.getName());
+						NetworkConstants.totalInputReadTime += delay;
 						this.send(tosend, delay, CloudSimTags.Network_Event_UP, hspkt);
 					}
 					hspktlist.clear();
 				}
 			}
 		}
-
+		if(packetTohost!=null){
+			for (Entry<Integer, List<NetworkPacket>> es : packetTohost.entrySet()){
+				NetStorageHost hs = this.storagelist.get(es.getKey());
+				List<NetworkPacket> hspktlist = es.getValue();
+				Iterator<NetworkPacket> it = hspktlist.iterator();
+				while (it.hasNext()) { 
+					NetworkPacket pkt = it.next();
+					hs.writeData(pkt);
+				}
+			}
+		}
+	//	System.out.println("storage switch process forward ");
 	}
 
+
+	@Override
+	protected void processpacket_down(SimEvent ev) {
+		// TODO Auto-generated method stub
+		//recieving data to write
+		NetworkPacket hspkt = (NetworkPacket) ev.getData();
+		CloudSim.cancelAll(getId(), new PredicateType(CloudSimTags.Network_Event_send));
+		schedule(getId(), latency, CloudSimTags.Network_Event_send);
+		//if(hspkt.pkt.reciever == -1)
+		//	System.out.println("storage switch output packet down");
+		List<NetworkPacket> pktlist = packetTohost.get(hspkt.pkt.storageId);
+		if (pktlist == null) {
+			pktlist = new ArrayList<NetworkPacket>();
+			packetTohost.put(hspkt.pkt.storageId, pktlist);
+		} 
+		pktlist.add(hspkt);
+	}
 	
 }

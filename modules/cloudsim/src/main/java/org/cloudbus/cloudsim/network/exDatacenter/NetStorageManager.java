@@ -56,7 +56,7 @@ public class NetStorageManager extends SimEntity {
 		}
 	}
 
-	public boolean assignStorageToApp(AppCloudlet app, String poolName) {
+	public boolean assignInitStorageToApp(AppCloudlet app, String poolName) {
 		//create data block for cloudlets of app
 		int blkId=0;
 		for(NetworkCloudlet cl : app.clist){
@@ -104,19 +104,42 @@ public class NetStorageManager extends SimEntity {
 
 	private void processWriteOutput(SimEvent ev) {
 		// TODO Auto-generated method stub
+		NetworkCloudlet cl = (NetworkCloudlet)ev.getData();
+		double data = cl.getCloudletOutputSize();
+		//create data blocks
+		int blkId=0;
+		while(data > NetworkConstants.MAX_DATA_BLK_SIZE_MB){
+			data = data - NetworkConstants.MAX_DATA_BLK_SIZE_MB;
+			NetStorageBlock newBlock = new NetStorageBlock("blk"+blkId, NetworkConstants.MAX_DATA_BLK_SIZE_MB,"file_"+cl.getCloudletId());
+			newBlock.setIndex(global_block_index);
+			newBlock.cloudletId = cl.getCloudletId();
+			//determine the location
+			List<Map<NetHarddriveStorage,Integer>> selectedDtorage = storagePoolList.get(0).rule.selectStorage(newBlock.getIndex());
+			for(int i=0; i<this.storagePoolList.get(0).getRiplicas(); i++){
+				NetHarddriveStorage targetStorage = selectedDtorage.get(i).keySet().iterator().next();
+				int hostId = selectedDtorage.get(i).get(targetStorage);
+				newBlock.getStorageDriveName().add(targetStorage.getName());
+				newBlock.getStorageHostId().add(hostId);
+				if(cl.getCloudletId() == 5)
+					System.out.println("assign output in storage "+hostId+" hard "+targetStorage.getName()+" replica"+i);
+			}
+			//
+			cl.outputData.add(newBlock);
+			global_block_index++;
+			if (global_block_index > max_block_index)
+				global_block_index = 0;
+			blkId++;
+			}
 		
 	}
 
 	private void processReadInput(SimEvent ev) {
 		// TODO Auto-generated method stub
 		List<NetStorageBlock> inputRequest = (List<NetStorageBlock>)ev.getData();
-		//System.out.println("input reading event processing for cloudlet "+inputRequest.get(0).cloudletId);
-		//System.out.println("BLOCK ID:Drive IDs:Host ID");
+		//System.out.println("storage manager read a list of "+inputRequest.size());
 		Map<Integer, List<NetStorageBlock>> storageData = new HashMap<Integer, List<NetStorageBlock>>();
 		for(NetStorageBlock blk : inputRequest){
-			//if(blk.cloudletId==2)
-    		//	System.out.println("process for cl2 size : "+blk.getData()+" block "+blk.getBlockId());
-    		 List<NetStorageBlock> curList = storageData.get(blk.getStorageHostId().get(0));
+			 List<NetStorageBlock> curList = storageData.get(blk.getStorageHostId().get(0));
 			 if(curList == null){
 				 curList = new ArrayList<NetStorageBlock>();
 			 }
@@ -146,5 +169,30 @@ public class NetStorageManager extends SimEntity {
     public static void setLinkDC(NetworkDatacenter alinkDC) {
 		linkDC = alinkDC;
 	}
+    
+    public void reportHardDriveStatus(){
+    	String indent = "    ";
+    	Log.printLine();
+    	Log.printLine("========== Storage Status ==========");
+		Log.printLine("Storage Host ID" + indent + "Harddrive"+indent+"Stored Block No"+ indent+"Free Space");
+    	for(NetStorageHost hs : linkDC.Storagelist.values()){
+    		double freeSpace = 0.0;
+    		int totBlk = 0;
+    		for(NetHarddriveStorage hdd : hs.storageDriveList){
+    			totBlk+=hdd.getNumStoredBlock();
+    			freeSpace+=hdd.getAvailableSpace();
+    		}
+    		
+    		System.out.println(indent +"Storage"+hs.getId()+ indent+ indent+indent+totBlk+ indent+ indent+ indent +freeSpace);
+    	}
+		Log.printLine("========== Storage Harddrives Status ==========");
+		Log.printLine("Storage Host ID" + indent + "Harddrive"+indent+"Stored Block No"+ indent+"Free Space");
+    	for(NetStorageHost hs : linkDC.Storagelist.values()){
+    		for(NetHarddriveStorage hdd : hs.storageDriveList){
+    			System.out.println(indent +"Storage"+hs.getId()+ indent+indent+hdd.getName()+ indent+ indent+indent+hdd.getNumStoredBlock()+ indent+ indent+ indent + hdd.getAvailableSpace());
+    		}
+    		
+    	}
+    }
 	
 }

@@ -16,6 +16,7 @@ import org.cloudbus.cloudsim.Datacenter;
 import org.cloudbus.cloudsim.HarddriveStorage;
 import org.cloudbus.cloudsim.Host;
 import org.cloudbus.cloudsim.Pe;
+import org.cloudbus.cloudsim.ResCloudlet;
 import org.cloudbus.cloudsim.Vm;
 import org.cloudbus.cloudsim.VmScheduler;
 import org.cloudbus.cloudsim.core.CloudSim;
@@ -107,86 +108,6 @@ public class NetStorageHost extends Host {
 	/**
 	 * Receives packets and forward them to the corresponding VM.
 	 */
-	private void recvpackets() {
-		for (NetworkPacket hs : packetTowrite) {
-			hs.pkt.recievetime = CloudSim.clock();
-			//write data on disk
-			}
-		
-		packetTowrite.clear();
-	}
-
-	/**
-	 * Sends packets checks whether a packet belongs to a local VM or to a 
-         * VM hosted on other machine.
-	 */
-	private void sendpackets() {
-		
-		for (Vm vm : super.getVmList()) {
-		//	 DCMngUtility.resultFile.println("packets sending from VM"+vm.getId());
-                    for (Entry<Integer, List<HostPacket>> es : ((NetworkCloudletSpaceSharedScheduler) vm
-                                    .getCloudletScheduler()).pkttosend.entrySet()) {
-                        List<HostPacket> pktlist = es.getValue();
-                        for (HostPacket pkt : pktlist) {
-                        	int pkNo = 1;
-                        	double remainData = pkt.data;
-                        	if(pkt.data > NetworkConstants.MAX_PACKET_SIZE_MB)
-                        		pkNo = (int) Math.ceil(pkt.data / NetworkConstants.MAX_PACKET_SIZE_MB);
-                        	for(int i = 0 ; i<pkNo ; i++){
-                        		HostPacket newPkt = pkt;
-                        		if(i == pkNo-1){
-                        			newPkt.data = remainData;
-                        			newPkt.isLastPkt = 1;
-                        		}
-                        		else{
-                        			newPkt.data = NetworkConstants.MAX_PACKET_SIZE_MB;
-                        			remainData = remainData - NetworkConstants.MAX_PACKET_SIZE_MB;
-                        		}
-                                NetworkPacket hpkt = new NetworkPacket(getId(), newPkt, vm.getId(), newPkt.sender);
-                                Vm vm2 = VmList.getById(this.getVmList(), hpkt.recievervmid);
-                                if (vm2 == null) {
-                                        packetTosend.add(hpkt);
-                                        for(Vm gVm : super.getDatacenter().getVmList()){
-                                        	if(gVm.getId() == hpkt.recievervmid){
-                                        		hostOfsendGlobal.add((NetStorageHost) gVm.getHost());
-                                        	}
-                                        }
-                                }
-                        	}
-                       }
-                        pktlist.clear();
-                    }
-		}
-		boolean flag = false;
-		
-		// Sending packet to other VMs therefore packet is forwarded to a Edge switch
-		double avband = bandwidth / packetTosend.size();
-		int hostIx = 0;
-		
-		for (NetworkPacket hs : packetTosend) {
-			hs.stime = hs.rtime;
-            hs.pkt.recievetime = CloudSim.clock();
-         //   System.out.println("global sending start time : "+ hs.pkt.recievetime);
-                    double delay = (1000 * hs.pkt.data) / avband;
-                    
-                    //System.out.println("size :"+hs.pkt.data+", from "+this.getId()+" to "+hostOfsendGlobal.get(hostIx).getId()+" with VM size "+hostOfsendGlobal.get(hostIx).getVmList().size());
-                  //  delay = DCMngUtility.computeDelay(this,hostOfsendGlobal.get(hostIx),hs.pkt);
-                  //  delay = delay * 1000; //convert s to ms
-                    
-                    if(sw.getId() != hostOfsendGlobal.get(hostIx).sw.getId())
-                    	NetworkConstants.interRackDataTransfer += hs.pkt.data;
-                    NetworkConstants.totaldatatransfer += hs.pkt.data;
-                    NetworkConstants.totaldatatransferTime += delay;
-
-                    //System.out.println("global sending delay time : "+ delay);
-                    CloudSim.send(getDatacenter().getId(), sw.getId(), delay, CloudSimTags.Network_Event_UP, hs);
-                    // send to switch with delay
-                    hostIx++;
-    //                this.getBwProvisioner().deallocateBwForVm(VmList.getById(getVmList(), hs.pkt.sender));
-            		}
-		packetTosend.clear();
-	//	System.out.println("global sending end time : "+ CloudSim.clock());
-	}
 
     public double getTotalFreeStorage(){
     	double freeStorage=0.0;
@@ -200,18 +121,54 @@ public class NetStorageHost extends Host {
     	//List<HostPacket> pktlist =  new ArrayList<HostPacket>();
     	for(NetStorageBlock blk : blockList){
     		HostPacket pkt = new HostPacket(
-					0,
+					-1,
 					blk.vmId,
 					blk.getData(),
 					CloudSim.clock(),
 					-1,
-					0,
+					-1,
 					blk.cloudletId); 
     		pkt.storageId = this.getId();
     		NetworkPacket npkt = new NetworkPacket(this.getId(),pkt,0,0);
     		npkt.stime = npkt.rtime;
     		npkt.pkt.recievetime = CloudSim.clock();
-    		CloudSim.send(getDatacenter().getId(), sw.getId(), 0, CloudSimTags.Network_Event_UP, npkt);
-        }
+    		//System.out.println( blk.getIOTime());
+    		CloudSim.send(getDatacenter().getId(), sw.getId(), blk.getIOTime(), CloudSimTags.Network_Event_UP, npkt);
+    		//System.out.println("storage host sending packet ");
+    		}
     }
+
+	public void writeData(NetworkPacket hpkt){
+		int clId = hpkt.pkt.virtualsendid;
+		int replicas = (int) hpkt.pkt.data;
+		int BlkIndex = hpkt.pkt.reciever;
+		//System.out.println("packet infos :"+hpkt.pkt.sender+","+hpkt.pkt.virtualsendid);
+		for(Vm vm : this.getDatacenter().getVmList()){
+			//System.out.println("VM Id "+vm.getId());
+			if(vm.getId() == hpkt.pkt.sender){
+				//System.out.println("cloudlet size : "+ (hpkt.pkt.virtualsendid));
+				for (ResCloudlet rcl : ((NetworkCloudletSpaceSharedScheduler)vm.getCloudletScheduler()).getCloudletExecList()){
+					NetworkCloudlet cl = (NetworkCloudlet) rcl.getCloudlet();
+					if(cl.getCloudletId() == clId){
+						int writeIndex = cl.outDataindex.get(replicas);
+							for(NetStorageBlock blk : cl.outputData){
+								if(blk.getIndex() == BlkIndex){
+									for(NetHarddriveStorage hdd : this.storageDriveList){
+										String drivename = blk.getStorageDriveName().get(replicas);
+										if(hdd.getName().equals(drivename)){
+											cl.outDataindex.set(replicas, (writeIndex+1));
+											hdd.addBlock(blk);
+											System.out.print("write block for cl "+cl.getCloudletId()+" size "+cl.outputData.size());
+											System.out.println(" in index "+writeIndex+" for replica "+replicas+"next index "+cl.outDataindex.get(replicas));
+											return;
+										}
+									}
+								}
+						}
+					}
+				}
+			}
+		}
+		
+	}
 }

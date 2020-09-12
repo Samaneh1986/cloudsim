@@ -60,6 +60,7 @@ public class AggregateSwitch extends Switch {
 		// add packet in the host list
 		NetworkPacket hspkt = (NetworkPacket) ev.getData();
 		int recvVMid = hspkt.pkt.reciever;
+		int switchid  = -1;
 		//if(hspkt.pkt.hashCode()==504527234)
 		//	System.out.println("packet 504527234 in switch "+this.getName());
 		CloudSim.cancelAll(getId(), new PredicateType(CloudSimTags.Network_Event_send));
@@ -68,8 +69,13 @@ public class AggregateSwitch extends Switch {
 		if (level == NetworkConstants.Agg_LEVEL) {
 			// packet is coming from root so need to be sent to edgelevel swich
 			// find the id for edgelevel switch
-			int switchid = dc.VmToSwitchid.get(recvVMid);
-			
+			if(hspkt.pkt.storageId > -1 && hspkt.pkt.virtualrecvid == -1){
+				switchid = dc.Storagelist.get(hspkt.pkt.storageId).sw.getId();
+			//	System.out.println("packet in "+getName()+" down to storage "+switchid);
+			}
+			else{
+				switchid = dc.VmToSwitchid.get(recvVMid);
+			}
 			
 			List<NetworkPacket> pktlist = downlinkswitchpktlist.get(switchid);
 			if (pktlist == null) {
@@ -96,10 +102,9 @@ public class AggregateSwitch extends Switch {
 		//
 		// int src=ev.getSource();
 		NetworkPacket hspkt = (NetworkPacket) ev.getData();
+		int switchid = -1;
+		
 		int recvVMid = hspkt.pkt.reciever;
-		//if(hspkt.pkt.hashCode()==504527234)
-		//	System.out.println("packet 504527234 in switch "+this.getName());
-		NetworkConstants.totaldatatransferTime += switching_delay;
 		CloudSim.cancelAll(getId(), new PredicateType(CloudSimTags.Network_Event_send));
 		schedule(getId(), switching_delay, CloudSimTags.Network_Event_send);
 		
@@ -109,7 +114,14 @@ public class AggregateSwitch extends Switch {
 			// packet is coming from edge level router so need to be sent to
 			// either root or another edge level swich
 			// find the id for edgelevel switch
-			int switchid = dc.VmToSwitchid.get(recvVMid);
+			if(hspkt.pkt.storageId > -1 && hspkt.pkt.virtualrecvid == -1){
+				switchid = dc.Storagelist.get(hspkt.pkt.storageId).sw.getId();
+				NetworkConstants.totalInputReadTime+= switching_delay;
+			}
+			else{
+				switchid = dc.VmToSwitchid.get(recvVMid);
+				NetworkConstants.totaldatatransferTime += switching_delay;
+			}
 			boolean flagtoswtich = false;
 			for (Switch sw : downlinkswitches) {
 				if (switchid == sw.getId()) {
@@ -127,7 +139,7 @@ public class AggregateSwitch extends Switch {
 			} else// send to up (to root switch)
 			{
 				
-				Switch sw = uplinkswitches.get(0);
+				Switch sw = bestUpSwitch(); //uplinkswitches.get(0);
 				List<NetworkPacket> pktlist = uplinkswitchpktlist.get(sw.getId());
 				if (pktlist == null) {
 					pktlist = new ArrayList<NetworkPacket>();
@@ -142,5 +154,23 @@ public class AggregateSwitch extends Switch {
 		}
 	}
 
-
+	private Switch bestUpSwitch(){
+		Switch bestSW = null;
+		int minTraffic = Integer.MAX_VALUE;
+		for(Switch sw : uplinkswitches){
+			if(uplinkswitchpktlist.get(sw.getId())==null){
+				bestSW = sw;
+				minTraffic = 0;
+				break;
+			}
+			else{
+				if(uplinkswitchpktlist.get(sw.getId()).size() < minTraffic)
+				{
+					bestSW = sw;
+					minTraffic = uplinkswitchpktlist.get(sw.getId()).size();
+				}
+			}
+		}
+		return bestSW;
+	}
 }
