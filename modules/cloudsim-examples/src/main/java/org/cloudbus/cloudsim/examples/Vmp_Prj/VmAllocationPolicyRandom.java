@@ -22,14 +22,14 @@ import org.cloudbus.cloudsim.network.exDatacenter.NetworkHost;
 public class VmAllocationPolicyRandom extends VmAllocationPolicy {
 	private Map<String, List<String>> usedHosts; // Broker Id to Host Id mapping
 	private Map<String, Host> vmTable; // VM Id to Host mapping
-	private Map<String, Integer> usedPes; // VM ID and allocated PEs number  
+	//private Map<String, Integer> usedPes; // VM ID and allocated PEs number  
 	
 	public VmAllocationPolicyRandom(List<? extends Host> list) {
 		super(list);
 		// init variables 
 		usedHosts = new HashMap<String, List<String>>();
 		setVmTable(new HashMap<String, Host>());
-		setUsedPes(new HashMap<String, Integer>());
+		//setUsedPes(new HashMap<String, Integer>());
 	}
 
 	/* (non-Javadoc)
@@ -42,15 +42,15 @@ public class VmAllocationPolicyRandom extends VmAllocationPolicy {
 		int requiredPes = vm.getNumberOfPes();
 		boolean result = false; 
 		boolean repeatedHost = false;
+		List<Host> l_host = this.getHostList();
 		if (!getVmTable().containsKey(vm.getUid())) {
-			UniformDistr ufrnd = new UniformDistr(0, super.getHostList().size()); 
-			int hostid = (int) ufrnd.sample();
-			//for (Host host : getHostList()) {
-			//for (int i =0; i < getHostList().size(); i++ ){
+			UniformDistr ufrnd = new UniformDistr(0, this.getHostList().size()); 
+			int hostid = 0; 
 			while (!result ){
-				hostid = (int) ufrnd.sample();
+				int hostidex = (int) ufrnd.sample();
+				hostid = l_host.get(hostidex).getId();
 				repeatedHost = false;
-				NetworkHost host = (NetworkHost) super.getHostList().get(hostid);
+				NetworkHost host = (NetworkHost) this.getHostList().get(hostid);
 				
 				if(usedHosts.get(String.valueOf(vm.getUserId()))!= null && usedHosts.get(String.valueOf(vm.getUserId())).contains(String.valueOf(host.getId()))){
 					repeatedHost = true;
@@ -63,7 +63,7 @@ public class VmAllocationPolicyRandom extends VmAllocationPolicy {
 				if (result) { // if vm were successfully created in the host
 					System.out.println("VM "+vm.getId()+" is placed on host " + host.getId() );
 					getVmTable().put(vm.getUid(), host);
-					getUsedPes().put(vm.getUid(), requiredPes); 
+					//getUsedPes().put(vm.getUid(), requiredPes); 
 					if(usedHosts.get(String.valueOf(vm.getUserId())) != null){
 						usedHosts.get(String.valueOf(vm.getUserId())).add( String.valueOf(host.getId()));
 					}
@@ -88,7 +88,7 @@ public class VmAllocationPolicyRandom extends VmAllocationPolicy {
 		if (host.vmCreate(vm)) { // if vm has been successfully created in the host
 			getVmTable().put(vm.getUid(), host);
 			int requiredPes = vm.getNumberOfPes();
-			getUsedPes().put(vm.getUid(), requiredPes);  
+			//getUsedPes().put(vm.getUid(), requiredPes);  
 			return true;
 		}
 
@@ -103,17 +103,19 @@ public class VmAllocationPolicyRandom extends VmAllocationPolicy {
 		// TODO Auto-generated method stub
 		boolean result = false; 
 		usedHosts.clear();
-		UniformDistr ufrnd = new UniformDistr(0, super.getHostList().size()); 
+		List<Host> l_host = this.getHostList();
+		UniformDistr ufrnd = new UniformDistr(0, this.getHostList().size()); 
 		for(Vm vm : vmList){
 			result = false;  
 			int requiredPes = vm.getNumberOfPes();
 			boolean repeatedHost = false;
 			if (!getVmTable().containsKey(vm.getUid())) { 
-				int hostid = (int) ufrnd.sample(); 
+				int hostid = 0; 
 				while (!result ){
-					hostid = (int) ufrnd.sample(); 
+					int hostidex = (int) ufrnd.sample();
+					hostid = l_host.get(hostidex).getId();
 					repeatedHost = false;
-					NetworkHost host = (NetworkHost) super.getHostList().get(hostid);
+					NetworkHost host = (NetworkHost) this.getHostList().get(hostid);
 					
 					if(usedHosts.get(String.valueOf(vm.getUserId()))!= null && usedHosts.get(String.valueOf(vm.getUserId())).contains(String.valueOf(host.getId()))){
 						repeatedHost = true;
@@ -126,7 +128,7 @@ public class VmAllocationPolicyRandom extends VmAllocationPolicy {
 					if (result) { // if vm were successfully created in the host
 						System.out.println("VM "+vm.getId()+" is placed on host " + host.getId() );
 						getVmTable().put(vm.getUid(), host);
-						getUsedPes().put(vm.getUid(), requiredPes); 
+						//getUsedPes().put(vm.getUid(), requiredPes); 
 						if(usedHosts.get(String.valueOf(vm.getUserId())) != null){
 							usedHosts.get(String.valueOf(vm.getUserId())).add( String.valueOf(host.getId()));
 						}
@@ -156,7 +158,7 @@ public class VmAllocationPolicyRandom extends VmAllocationPolicy {
 		// TODO Auto-generated method stub
 		try{
 		Host host = getVmTable().remove(vm.getUid()); 
-		int pes = getUsedPes().remove(vm.getUid());
+	//	int pes = getUsedPes().remove(vm.getUid());
 		if (host != null) {
 			host.vmDestroy(vm); 
 			System.out.println("VM "+vm.getId()+" is removed from Host "+host.getId());
@@ -192,12 +194,12 @@ public class VmAllocationPolicyRandom extends VmAllocationPolicy {
 	protected void setVmTable(Map<String, Host> vmTable) {
 		this.vmTable = vmTable;
 	} 
-	protected Map<String, Integer> getUsedPes() {
+/*	protected Map<String, Integer> getUsedPes() {
 		return usedPes;
 	} 
 	protected void setUsedPes(Map<String, Integer> usedPes) {
 		this.usedPes = usedPes;
-	}  
+	}  */
 	//******************************************************
 
 }

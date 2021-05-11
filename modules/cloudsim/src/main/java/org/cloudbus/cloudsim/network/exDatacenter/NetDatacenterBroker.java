@@ -16,6 +16,7 @@ import java.util.Map;
 
 import org.cloudbus.cloudsim.Cloudlet;
 import org.cloudbus.cloudsim.DatacenterCharacteristics;
+import org.cloudbus.cloudsim.Host;
 import org.cloudbus.cloudsim.Log;
 import org.cloudbus.cloudsim.Vm;
 import org.cloudbus.cloudsim.core.CloudSim;
@@ -259,6 +260,7 @@ public class NetDatacenterBroker extends SimEntity {
 			//cloudletToVmRandomAssign(app);
 			if(app.alreadyProcess == 0 ){
 				app.alreadyProcess = 1;
+				
 				//cloudletToVmSequenceAssign(app,strIndex);
 				cloudletToVmCustomAssign(app);
 				strIndex = strIndex + app.numbervm;
@@ -267,6 +269,24 @@ public class NetDatacenterBroker extends SimEntity {
 				 *  for defining send/receive stage.
 				 */
 				DCMngUtility.defineStagesOfTable(app);
+				
+				//Average Host utilization
+				/*
+				NetworkConstants.totalSubmittedCloudlet = NetworkConstants.totalSubmittedCloudlet  + app.clist.size();
+				int totUsdHst = 0; 
+				double usagemean = 0.0;
+				for (Host hs : linkDC.getHostList()) {
+					NetworkHost nvh = (NetworkHost) hs;
+					if (nvh.getUtilizedCpu() != 0) {
+						totUsdHst++;
+						usagemean = usagemean + (1 - nvh.getUnusedCpu());
+					} 
+				}
+				usagemean = usagemean / totUsdHst;
+				DCMngUtility.resultFileHostNo.print("("+NetworkConstants.totalSubmittedCloudlet +","+totUsdHst+")");
+				DCMngUtility.resultFileCpu.print("("+NetworkConstants.totalSubmittedCloudlet +","+usagemean+")");
+				*/
+				//
 			}
 		}
 		setVmsRequested(0);
@@ -285,7 +305,6 @@ public class NetDatacenterBroker extends SimEntity {
 	protected void processResourceCharacteristicsRequest(SimEvent ev) {
 		setDatacenterIdsList(CloudSim.getCloudResourceList());
 		setDatacenterCharacteristicsList(new HashMap<Integer, DatacenterCharacteristics>());
-
 		Log.printConcatLine(CloudSim.clock(), ": ", getName(), ": Cloud Resource List received with ",
 				getDatacenterIdsList().size(), " resource(s)");
 
@@ -312,6 +331,13 @@ public class NetDatacenterBroker extends SimEntity {
 	 * @post $none
 	 */
 	protected void processCloudletReturn(SimEvent ev) {
+		//creating log file for inter-rack data transferring
+		NetworkConstants.totalFinishedCloudlet ++;
+		Log.printLine("Finished cloudlet "+NetworkConstants.totalFinishedCloudlet+", traffic:"+NetworkConstants.interRackDataTransfer);
+		if(Math.floorMod((int) NetworkConstants.totalFinishedCloudlet,100)==1) {
+			DCMngUtility.resultFileTraffic.print("("+NetworkConstants.totalFinishedCloudlet +","+(NetworkConstants.interRackDataTransfer/1000)+")");
+		}
+		/////
 		NetworkCloudlet cloudlet = (NetworkCloudlet) ev.getData();
 		getCloudletReceivedList().add(cloudlet);
 		cloudletsSubmitted--;  
@@ -372,6 +398,35 @@ public class NetDatacenterBroker extends SimEntity {
 				getVmsToDatacentersMap().put(vm.getId(), datacenterId);
 				getVmsCreatedList().add(VmList.getById(getVmList(), vm.getId()));
 			}
+			//Average Host utilization
+			
+			NetworkConstants.totalSubmittedCloudlet = NetworkConstants.totalSubmittedCloudlet  + NewVmlist.size();
+			int totUsdHst = 0; 
+			double usagemean = 0.0;
+			for (Host hs : linkDC.getHostList()) {
+				NetworkHost nvh = (NetworkHost) hs;
+				if (nvh.getUtilizedCpu() != 0) {
+					totUsdHst++;
+					//usagemean = usagemean + (1 - nvh.getUnusedCpu());
+					double usedRamPrc = nvh.getRamProvisioner().getRam() - nvh.getRamProvisioner().getAvailableRam();
+					usedRamPrc = (usedRamPrc / nvh.getRamProvisioner().getRam());
+					usagemean = usagemean + usedRamPrc;
+					if(Math.floorMod((int) NetworkConstants.totalSubmittedCloudlet, 500 ) < 10) {
+						//nvh.utilizedCpuAgg = nvh.utilizedCpuAgg + (1 - nvh.getUnusedCpu());
+						nvh.utilizedRamAgg = nvh.utilizedRamAgg + usedRamPrc;
+						nvh.utilizedCpuCount ++;
+						//FOR BoxPlot
+						//DCMngUtility.resultFileCpu.print("("+NetworkConstants.totalSubmittedCloudlet +","+(nvh.utilizedCpuAgg/nvh.utilizedCpuCount)+")");
+						DCMngUtility.resultFileCpu.print("("+NetworkConstants.totalSubmittedCloudlet +","+(nvh.utilizedRamAgg/nvh.utilizedCpuCount)+")");
+					}
+				} 
+			}
+			usagemean = usagemean / totUsdHst;
+			//FOR Linear Diagram
+			//DCMngUtility.resultFileHostNo.print("("+NetworkConstants.totalSubmittedCloudlet +","+totUsdHst+")");
+			DCMngUtility.resultFileHostNo.print("("+NetworkConstants.totalSubmittedCloudlet +","+usagemean+")");
+			//DCMngUtility.resultFileCpu.print("("+NetworkConstants.totalSubmittedCloudlet +","+usagemean+")");
+			
 		}
 		else{
 			System.out.println("***** SINGLE VM ALLOCATION POLICY *****");

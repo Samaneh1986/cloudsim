@@ -27,5 +27,8 @@
 			<attribute name="maven.pomderived" value="true"/>
 		</attributes>
 	</classpathentry>
+	<classpathentry kind="lib" path="/home/gwdg/eclipse-workspace/myProject/clp-java-1.16.11-full.jar"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/5"/>
+	<classpathentry kind="lib" path="/home/gwdg/eclipse-workspace/jarlib/easymock-4.2/original-easymock-4.2.jar"/>
 	<classpathentry kind="output" path="target/classes"/>
 </classpath>

@@ -62,13 +62,22 @@ public class RootSwitch extends Switch {
 
 		NetworkPacket hspkt = (NetworkPacket) ev.getData();
 		int recvVMid = hspkt.pkt.reciever;
-		NetworkConstants.totaldatatransferTime += switching_delay;
 		CloudSim.cancelAll(getId(), new PredicateType(CloudSimTags.Network_Event_send));
 		schedule(getId(), switching_delay, CloudSimTags.Network_Event_send);
 
 		if (level == NetworkConstants.ROOT_LEVEL) {
+			//NetworkConstants.interRackDataTransfer += hspkt.pkt.data;
+			//DCMngUtility.resultFile.println("in root switch" + this.getName()+"rout from "+hspkt.senderhostid+":"+hspkt.sendervmid+" to "+hspkt.recieverhostid+":"+hspkt.recievervmid);
 			// get id of edge router
-			int edgeswitchid = dc.VmToSwitchid.get(recvVMid);
+			int edgeswitchid = -1;
+			if(hspkt.pkt.storageId > -1  && hspkt.pkt.virtualrecvid == -1){
+				edgeswitchid = dc.Storagelist.get(hspkt.pkt.storageId).sw.getId();
+				NetworkConstants.totalInputReadTime+= switching_delay;
+			}
+			else{
+				edgeswitchid = dc.VmToSwitchid.get(recvVMid);
+				NetworkConstants.totaldatatransferTime += switching_delay;
+			}
 			// search which aggregate switch has it
 			int aggSwtichid = -1;
 			;

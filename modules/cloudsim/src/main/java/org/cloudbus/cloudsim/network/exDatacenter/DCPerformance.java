@@ -30,12 +30,14 @@ public class DCPerformance {
 	//variables to compute Host performance
 	private class HostParemeters{
 		public int hostId;
+		public String rackName;
 		public int updCount = 0;
 		public long total_VM_served=0;
 		public double mean_mem_used=0.0;
 		public double mean_cpu_used=0.0;
 		public double max_mem_used=0.0;
 		public double max_cpu_used = 0.0;
+		public double max_bw_used = 0.0;
 		public double total_ram;
 		public double  total_mips;
 		HostParemeters(int Id){ this.hostId = Id;}
@@ -206,10 +208,18 @@ public class DCPerformance {
 		}
 		else{
 			hostPrms = new HostParemeters(hostId);
+			hostPrms.rackName = host.sw.getName();
 		}
 		hostPrms.updCount++;
 		if(inVmCreate == 1)
 			hostPrms.total_VM_served++;
+		double bwUsedPrc = 0;
+		if(host.sw.bytesTohostSize!=null && host.sw.bytesTohostSize.get(host.getId())!=null)
+			bwUsedPrc = ((host.bytesTosendGlobalSize + host.sw.bytesTohostSize.get(host.getId()))* 8) / host.bandwidth;
+		else
+			bwUsedPrc = (host.bytesTosendGlobalSize * 8) / host.bandwidth;
+		if(bwUsedPrc > hostPrms.max_bw_used)
+			hostPrms.max_bw_used = bwUsedPrc;
 		double peUsedPrc = 0.0;
 		double totalPe = 0.0;
 		for(Pe p : host.getPeList()){
@@ -234,13 +244,13 @@ public class DCPerformance {
 		df.applyPattern("#0.000000#");
 		System.out.println("performance information for hosts (average and total values): ");
 		String indent = "   ";
-		Log.printLine("Host ID" + indent+"total_Ram" + indent+"total_Mips"+indent+"total_VMs"+ indent + "MAX_CPU" + indent + "Mean_CPU" + indent + "Max_Ram" + indent +"Mean_Ram" );
+		Log.printLine("RACK name" + "Host ID"+"max_bw" );
 		indent = "      ";
 		for(int id : hostPerformance.keySet()){
 			HostParemeters hsPrms = hostPerformance.get(id);
-			Log.printLine("   "+id +indent+hsPrms.total_ram+indent+hsPrms.total_mips+ indent+hsPrms.total_VM_served+ indent+hsPrms.max_cpu_used+ indent+df.format(hsPrms.mean_cpu_used)+indent+(hsPrms.max_mem_used)+ indent+df.format(hsPrms.mean_mem_used));
+			Log.printLine(hsPrms.rackName+"   "+id + indent+df.format(hsPrms.max_bw_used));
 			
-		}
+		} 
 		
 	}
 }

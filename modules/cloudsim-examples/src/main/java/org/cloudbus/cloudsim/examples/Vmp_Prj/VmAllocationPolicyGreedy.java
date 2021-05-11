@@ -30,12 +30,14 @@ public class VmAllocationPolicyGreedy extends VmAllocationPolicy {
 	private int [] host_selected;
 	private double [][] distance_matrix;
 	
+	
 	public VmAllocationPolicyGreedy(List<? extends Host> list) {
 		super(list);
 
 		setVmTable(new HashMap<String, Host>());
+		
 		this.host_list =  new ArrayList<NetworkHost>();
-		//this.host_list = (List<NetworkHost>) list;
+		
 	}
 
 	/* (non-Javadoc)
@@ -44,7 +46,7 @@ public class VmAllocationPolicyGreedy extends VmAllocationPolicy {
 	@Override
 	public boolean allocateHostForVm(Vm vm) {
 		// TODO Auto-generated method stub
-		boolean result = true;
+		boolean result = true; 
 		int slctHostIx = -1;
 		double minTrafficCost = Double.MAX_VALUE;
 		double tmp = 0.0;
@@ -93,7 +95,9 @@ public class VmAllocationPolicyGreedy extends VmAllocationPolicy {
 	@Override
 	public List<Map<String, Object>> optimizeAllocation(List<? extends Vm> vmList) {
 		// TODO Auto-generated method stub
+		create_distance_matrix(); // distance is the number of hops
 		UniformDistr ufrnd = new UniformDistr(0, super.getHostList().size()); 
+		//System.out.println("TOTAL DC HOSTS:"+super.getHostList().size());
 		boolean result = false;
 		int hostid = -1;
 		NetworkHost host = null;
@@ -105,38 +109,15 @@ public class VmAllocationPolicyGreedy extends VmAllocationPolicy {
 		}
 		int selHostId = host.getId();
 		getVmTable().put(vmList.get(0).getUid(), host);
-		System.out.println("First placement: VM Id , Host Id: "+vmList.get(0).getId()+" , "+selHostId);
-		EdgeSwitch esw = (EdgeSwitch)host.sw;
-		AggregateSwitch asw = null;
-		System.out.println("VMs requested : " + vmList.size()+ " available no in rack "+esw.getName()+" is "+esw.hostlist.size());
-		int available_hosts=0;
-		for(NetworkHost curhost : esw.hostlist.values()){
-			if(curhost.isSuitableForVm(vmList.get(0)))
-				available_hosts++;
-		}
-		if(vmList.size() > available_hosts){
-			asw = (AggregateSwitch) esw.uplinkswitches.get(0);
-			int available_agg_hosts=0;
-			for(Switch csw : asw.downlinkswitches){
-				if(!csw.getName().startsWith("S")){
-					for(NetworkHost curhost : csw.hostlist.values()){
-						if(curhost.isSuitableForVm(vmList.get(0)))
-							available_agg_hosts++;
-					}
-				}
-			}
-			if(vmList.size() > available_agg_hosts)
-				create_distance_matrix(asw.uplinkswitches.get(0));
-			else
-				create_distance_matrix(asw);
-			//create_distance_matrix(null);
-			}
-		else{
-			create_distance_matrix(esw);
-		}
+		//System.out.println("First placement: VM Id , Host Id: "+vmList.get(0).getId()+" , "+selHostId+" on switch "+host.sw.getId());
+		
 		for(int i = 0; i<host_list.size(); i++){
-			if(host_list.get(i).getId() == selHostId)
+			if(host_list.get(i).getId() == selHostId) {
 				host_selected[i] = 1;
+				//System.out.println("First placement host index: " +i);
+			}
+			else
+				host_selected[i] = 0;
 		}
 		// select neaarest host to selected one for VM 1-N
 		double minDistance = Double.MAX_VALUE;
@@ -147,7 +128,7 @@ public class VmAllocationPolicyGreedy extends VmAllocationPolicy {
 			for(int i =0; i<host_list.size(); i++){
 				if(host_selected[i] == 0){
 					if(host_list.get(i).isSuitableForVm(vm)){
-						tmp = 0;
+						tmp =  0;
 						for(int j =0; j<host_list.size(); j++){
 							tmp = tmp + (distance_matrix[i][j] * host_selected[j]);
 						}
@@ -171,8 +152,8 @@ public class VmAllocationPolicyGreedy extends VmAllocationPolicy {
 			host = host_list.get(slctHostIx);
 			result = host.vmCreate(vm);
 			getVmTable().put(vm.getUid(), host);
-			System.out.println("host with min distance of :"+minDistance);
-		    System.out.println("The placement : Vm Id , Host Id :"+vm.getId()+","+host.getId());
+			//System.out.println("host with min distance of :"+minDistance);
+		    //System.out.println("The placement : Vm Id , Host Id :"+vm.getId()+","+host.getId()+" on switch "+host.sw.getId());
 		    minDistance = Double.MAX_VALUE;
 			slctHostIx = -1;
 			}
@@ -235,41 +216,17 @@ public class VmAllocationPolicyGreedy extends VmAllocationPolicy {
 	protected void setVmTable(Map<String, Host> vmTable) {
 		this.vmTable = vmTable;
 	} 
-private void create_distance_matrix(Switch rsw){ 
-		
+private void create_distance_matrix(){ 
+		if(distance_matrix == null) {
 		host_list.clear();
-		//if(rsw != null){
-		if (rsw.level == NetworkConstants.ROOT_LEVEL){
-			for(Switch sw : rsw.downlinkswitches){
-				for(Switch edgsw : sw.downlinkswitches){ 
-					for(NetworkHost host : edgsw.hostlist.values()){ 
-							host_list.add(host);
-					}
-			    }
-			}
-	    	}
-	    else if (rsw.level == NetworkConstants.Agg_LEVEL){
-		for(Switch sw : rsw.downlinkswitches){
-			if(!sw.getName().startsWith("S")){
-				for(NetworkHost host : sw.hostlist.values()){
-						host_list.add(host);
-				}
-			}
-		}
-    	}
-	//	}
-    	else{
-    		for(NetworkHost host : rsw.hostlist.values()){ 
-					host_list.add(host);
-			//		System.out.print("candidate hosts: "+host.getId()+", ");
-			}
-    	}
+		for(Host host : super.getHostList())
+				host_list.add((NetworkHost)host);
+		
 		// fill distance_matrix
 		distance_matrix = new double [host_list.size()][host_list.size()];
 		host_selected = new int [host_list.size()];  
 		for(int i =0; i<host_list.size(); i++){
 			NetworkHost host1 = host_list.get(i) ;
-			host_selected[i] = 0;
 			
 			for(int j =0; j<host_list.size(); j++){
 				NetworkHost host2 = host_list.get(j) ;
@@ -279,11 +236,9 @@ private void create_distance_matrix(Switch rsw){
 					distance_matrix[i][j] = distance(host1,host2);
 					distance_matrix[j][i] = distance_matrix[i][j];
 				}
-			j++;	
 			}
-			i++;
 		}
-		
+		}
 	}
 private double distance(NetworkHost host1, NetworkHost host2){
 	double distance = 0.0;

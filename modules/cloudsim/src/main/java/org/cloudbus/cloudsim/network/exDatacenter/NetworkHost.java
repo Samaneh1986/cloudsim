@@ -72,6 +72,10 @@ public class NetworkHost extends Host {
 	
 	private double utilizedCpu;
 	private double unusedCpu;
+	
+	public double utilizedCpuAgg = 0;
+	public double utilizedRamAgg = 0;
+	public int utilizedCpuCount = 0;
 
 	/** Time when last job will finish on CPU1. 
          * @todo it is not being used.
@@ -108,6 +112,7 @@ public class NetworkHost extends Host {
 		// insert in each vm packet recieved 
 		recvpackets();
 		for (Vm vm : super.getVmList()) {
+			//System.out.println("update status of VM "+vm.getId());
 			double time = ((NetworkVm) vm).updateVmProcessing(currentTime, getVmScheduler()
 					.getAllocatedMipsForVm(vm));
 			if (time > 0.0 && time < smallerTime) {
@@ -116,8 +121,8 @@ public class NetworkHost extends Host {
 		}
 		// send the packets to other hosts/VMs
 		sendpackets();
-		if((CloudSim.clock() - passTime )>10 ){
-			DCMngUtility.dcPerformance.updateHostParams(this,0);
+		if((CloudSim.clock() - passTime )>50 ){
+			//DCMngUtility.dcPerformance.updateHostParams(this,0);
 			passTime = CloudSim.clock();
 		}
 		return smallerTime;
@@ -148,18 +153,18 @@ public class NetworkHost extends Host {
 		}
 		//System.out.println("free no: "+freeCpu+", used no: "+usedCpu);
 		peUsedPrc = peUsedPrc / usedCpu;
-		if(unusedCpu == 0 && utilizedCpu == 0){
+		//if(unusedCpu == 0 && utilizedCpu == 0){
 			utilizedCpu = peUsedPrc;
 			unusedCpu = (freeCpu / (freeCpu+usedCpu));
 			//System.out.println("First VM : " + unusedCpu+","+(freeCpu / (freeCpu+usedCpu)));
-		}
+	/*	}
 		else{
 			utilizedCpu = (utilizedCpu+peUsedPrc)/2;
 			unusedCpu = (unusedCpu+(freeCpu/(freeCpu+usedCpu)))/2;
 			//System.out.println("Next VM : " + utilizedCpu+","+unusedCpu);
-		}
+		}*/
 		
-		DCMngUtility.dcPerformance.updateHostParams(this,1);
+	//DCMngUtility.dcPerformance.updateHostParams(this,1);
 		
 		return result;
 	}
@@ -178,7 +183,9 @@ public class NetworkHost extends Host {
 		for (NetworkPacket hs : packetrecieved) {
 			hs.pkt.recievetime = CloudSim.clock();
 			Vm vm = VmList.getById(getVmList(), hs.pkt.reciever);  
-			
+			if(vm==null)
+				System.out.println("packet to removed VM Id "+hs.pkt.reciever+" on host "+this.getId()+" total VM "+ getVmList().size());
+			else{
 			List<HostPacket> pktlist = ((NetworkCloudletSpaceSharedScheduler) vm.getCloudletScheduler()).pktrecv
 					.get(hs.pkt.sender);
 
@@ -190,6 +197,7 @@ public class NetworkHost extends Host {
 
 			}
 			pktlist.add(hs.pkt); 
+			}
 			}
 		
 		packetrecieved.clear();
@@ -207,17 +215,20 @@ public class NetworkHost extends Host {
          * VM hosted on other machine.
 	 */
 	private void sendpackets() {
-		
+		//if(super.getVmList().size()>0)
+		//	System.out.println("still has some VMs");
 		for (Vm vm : super.getVmList()) {
+		//	System.out.println("packet to send size : "+((NetworkCloudletSpaceSharedScheduler)vm.getCloudletScheduler()).pkttosend.entrySet().size());
 		//	 DCMngUtility.resultFile.println("packets sending from VM"+vm.getId());
                     for (Entry<Integer, List<HostPacket>> es : ((NetworkCloudletSpaceSharedScheduler) vm
                                     .getCloudletScheduler()).pkttosend.entrySet()) {
                         List<HostPacket> pktlist = es.getValue();
-                        for (HostPacket pkt : pktlist) {
-                        //	if(pkt.storageId == 0){
+                      //  System.out.println("sending output .............."+pktlist.size());
+                    	for (HostPacket pkt : pktlist) {
+                        	//	System.out.println("sending output .............."+pkt.storageId+","+pkt.reciever);
 	                        	int pkNo = 1;
 	                        	double remainData = pkt.data;
-	                        	if(pkt.data > NetworkConstants.MAX_PACKET_SIZE_MB)
+	                        	if(pkt.data > NetworkConstants.MAX_PACKET_SIZE_MB && pkt.storageId == -1)
 	                        		pkNo = (int) Math.ceil(pkt.data / NetworkConstants.MAX_PACKET_SIZE_MB);
 	                        	for(int i = 0 ; i<pkNo ; i++){
 	                        		HostPacket newPkt = pkt;
@@ -231,7 +242,7 @@ public class NetworkHost extends Host {
 	                        		}
 	                                NetworkPacket hpkt = new NetworkPacket(getId(), newPkt, vm.getId(), newPkt.sender);
 	                                Vm vm2 = VmList.getById(this.getVmList(), hpkt.recievervmid);
-	                                if (vm2 != null) {
+	                                if (newPkt.storageId == -1 && vm2 != null) {
 	                                        packetTosendLocal.add(hpkt);
 	                                } else {
 	                                        packetTosendGlobal.add(hpkt);
@@ -251,7 +262,6 @@ public class NetworkHost extends Host {
                     }
 		}
 		boolean flag = false;
-		
 
 		for (NetworkPacket hs : packetTosendLocal) {
                     flag = true;
@@ -293,15 +303,19 @@ public class NetworkHost extends Host {
                   //  delay = DCMngUtility.computeDelay(this,hostOfsendGlobal.get(hostIx),hs.pkt);
                   //  delay = delay * 1000; //convert s to ms
                     
-                    if(sw.getId() != hostOfsendGlobal.get(hostIx).sw.getId())
+                    if(hs.pkt.storageId == -1 && sw.getId() != hostOfsendGlobal.get(hostIx).sw.getId()){
                     	NetworkConstants.interRackDataTransfer += hs.pkt.data;
+                    	hostIx++;
+                    }
                     NetworkConstants.totaldatatransfer += hs.pkt.data;
                     NetworkConstants.totaldatatransferTime += delay;
 
-                    //System.out.println("global sending delay time : "+ delay);
+        			//System.out.println("global sending delay time : "+ delay);
+                   // if(hs.pkt.storageId > -1)
+                   // 	System.out.println("output packet sent from host ... info :"+hs.pkt.storageId+","+hs.pkt.reciever);
                     CloudSim.send(getDatacenter().getId(), sw.getId(), delay, CloudSimTags.Network_Event_UP, hs);
                     // send to switch with delay
-                    hostIx++;
+                    
     //                this.getBwProvisioner().deallocateBwForVm(VmList.getById(getVmList(), hs.pkt.sender));
             		}
 		packetTosendGlobal.clear();

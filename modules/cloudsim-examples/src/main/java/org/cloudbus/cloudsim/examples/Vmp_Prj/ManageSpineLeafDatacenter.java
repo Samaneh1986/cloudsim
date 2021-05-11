@@ -32,9 +32,9 @@ public class ManageSpineLeafDatacenter {
 	
 	// Network structure variables
 	// !!! all the Bandwidth are in MB, because of overflow!!!
-	private int LeafSwitchPorts = 10;
-	private int SpineSwitchPorts = 20;
-	private int NumOfSpineSwitch = 4;
+	private int LeafSwitchPorts = 8; // 10; //9;
+	private int SpineSwitchPorts = 16; //25; //6;
+	private int NumOfSpineSwitch = 8;
 	private long BandWidthLeafHost = 10 * 1024; // 1gb , BW number is in MB
 	private long BandWidthLeafSpine = 40 * 1024 ;// 10gb
 	private long BandWidthAggRoot = 40 * 1024 ;// 10gb
@@ -51,49 +51,21 @@ public class ManageSpineLeafDatacenter {
 	}
 	public NetworkDatacenter createDatacenter() {
 		List<NetworkHost> hostList = new ArrayList<NetworkHost>();  
-		int mips = 500 ; 
-		int ram = 8192; // host memory (MB) = 8GB
+		int mips = 5200 ; 
+		//int ram = 131072; // host memory (MB) = 128GB
+		int ram = 394240; // host memory (MB) = 385GB
+		int logicalCores = 80;
 		long storage = 1000000; // host storage
 		long bw = BandWidthLeafHost;
-		int high_cpu_hosts = (int) (Math.round(LeafSwitchPorts * 0.6) * SpineSwitchPorts); // 32 CPU, 8GB Ram
-		int hig_ram_hosts =  (int) (Math.round(LeafSwitchPorts * 0.3) * SpineSwitchPorts); // 16 CPU, 16GB Ram
-		int mid_cpu_ram_hosts =  (int) ((LeafSwitchPorts - (Math.round(LeafSwitchPorts * 0.6) + Math.round(LeafSwitchPorts * 0.3))) * SpineSwitchPorts); // 8 CPU, 8GB Ram
-		long total_hosts = high_cpu_hosts + hig_ram_hosts + mid_cpu_ram_hosts;
-		System.out.println("config:"+total_hosts+"="+high_cpu_hosts +","+ hig_ram_hosts+"," + mid_cpu_ram_hosts);
+		int high_cpu_hosts = (int) (Math.round(LeafSwitchPorts * 0.13) * SpineSwitchPorts); // 80 CPU, 385GB Ram
+		int high_ram_hosts =  ((int) (Math.round(LeafSwitchPorts * 0.20) * SpineSwitchPorts))-high_cpu_hosts; // 64 CPU, 516GB Ram
+		int mid_cpu_ram_hosts =  (int) ((LeafSwitchPorts * SpineSwitchPorts) -high_ram_hosts - high_cpu_hosts); // 64 CPU, 256GB Ram
+		long total_hosts = high_cpu_hosts + high_ram_hosts + mid_cpu_ram_hosts;
+		System.out.println("config:"+total_hosts+"="+high_cpu_hosts +","+ high_ram_hosts+"," + mid_cpu_ram_hosts);
 		for (int i = 0; i <high_cpu_hosts; i++) { 
 			List<Pe> peList = new ArrayList<Pe>();
-			peList.add(new Pe(0, new PeProvisionerSimple(mips)));  
-			peList.add(new Pe(1, new PeProvisionerSimple(mips)));  
-			peList.add(new Pe(2, new PeProvisionerSimple(mips))); 
-			peList.add(new Pe(3, new PeProvisionerSimple(mips)));  
-			peList.add(new Pe(4, new PeProvisionerSimple(mips)));  
-			peList.add(new Pe(5, new PeProvisionerSimple(mips)));  
-			peList.add(new Pe(6, new PeProvisionerSimple(mips)));  
-			peList.add(new Pe(7, new PeProvisionerSimple(mips)));  
-			peList.add(new Pe(8, new PeProvisionerSimple(mips)));  
-			peList.add(new Pe(9, new PeProvisionerSimple(mips)));  
-			peList.add(new Pe(10, new PeProvisionerSimple(mips)));  
-			peList.add(new Pe(11, new PeProvisionerSimple(mips)));  
-			peList.add(new Pe(12, new PeProvisionerSimple(mips)));  
-			peList.add(new Pe(13, new PeProvisionerSimple(mips)));  
-			peList.add(new Pe(14, new PeProvisionerSimple(mips)));  
-			peList.add(new Pe(15, new PeProvisionerSimple(mips)));  
-			peList.add(new Pe(16, new PeProvisionerSimple(mips)));  
-			peList.add(new Pe(17, new PeProvisionerSimple(mips)));  
-			peList.add(new Pe(18, new PeProvisionerSimple(mips))); 
-			peList.add(new Pe(19, new PeProvisionerSimple(mips)));  
-			peList.add(new Pe(20, new PeProvisionerSimple(mips)));  
-			peList.add(new Pe(21, new PeProvisionerSimple(mips)));  
-			peList.add(new Pe(22, new PeProvisionerSimple(mips)));  
-			peList.add(new Pe(23, new PeProvisionerSimple(mips)));  
-			peList.add(new Pe(24, new PeProvisionerSimple(mips)));  
-			peList.add(new Pe(25, new PeProvisionerSimple(mips)));  
-			peList.add(new Pe(26, new PeProvisionerSimple(mips)));  
-			peList.add(new Pe(27, new PeProvisionerSimple(mips)));  
-			peList.add(new Pe(28, new PeProvisionerSimple(mips)));  
-			peList.add(new Pe(29, new PeProvisionerSimple(mips)));  
-			peList.add(new Pe(30, new PeProvisionerSimple(mips)));  
-			peList.add(new Pe(31, new PeProvisionerSimple(mips)));  
+			for(int coreId = 0; coreId<logicalCores; coreId++)
+				peList.add(new Pe(coreId, new PeProvisionerSimple(mips)));  
 			
 			hostList.add( new NetworkHost(
 					NetworkConstants.currentHostId,
@@ -104,25 +76,15 @@ public class ManageSpineLeafDatacenter {
 					new VmSchedulerTimeShared(peList))); 
 			NetworkConstants.currentHostId++;
 		}
-		ram = 16384; // host memory (MB) = 16GB
-		for (int i = 0; i <hig_ram_hosts; i++) { 
+		//ram = 65536; // host memory (MB) = 64GB
+		ram = 528384; // host memory (MB) = 516GB
+		logicalCores = 64;
+		mips = 4600;
+		for (int i = 0; i <high_ram_hosts; i++) { 
 			List<Pe> peList = new ArrayList<Pe>();
-			peList.add(new Pe(0, new PeProvisionerSimple(mips)));  
-			peList.add(new Pe(1, new PeProvisionerSimple(mips)));  
-			peList.add(new Pe(2, new PeProvisionerSimple(mips))); 
-			peList.add(new Pe(3, new PeProvisionerSimple(mips)));  
-			peList.add(new Pe(4, new PeProvisionerSimple(mips)));  
-			peList.add(new Pe(5, new PeProvisionerSimple(mips)));  
-			peList.add(new Pe(6, new PeProvisionerSimple(mips)));  
-			peList.add(new Pe(7, new PeProvisionerSimple(mips)));    
-			peList.add(new Pe(8, new PeProvisionerSimple(mips)));  
-			peList.add(new Pe(9, new PeProvisionerSimple(mips)));  
-			peList.add(new Pe(10, new PeProvisionerSimple(mips))); 
-			peList.add(new Pe(11, new PeProvisionerSimple(mips)));  
-			peList.add(new Pe(12, new PeProvisionerSimple(mips)));  
-			peList.add(new Pe(13, new PeProvisionerSimple(mips)));  
-			peList.add(new Pe(14, new PeProvisionerSimple(mips)));  
-			peList.add(new Pe(15, new PeProvisionerSimple(mips)));    
+			for(int coreId = 0; coreId<logicalCores; coreId++)
+				peList.add(new Pe(coreId, new PeProvisionerSimple(mips)));  
+			
 			
 			hostList.add( new NetworkHost(
 					NetworkConstants.currentHostId,
@@ -133,17 +95,14 @@ public class ManageSpineLeafDatacenter {
 					new VmSchedulerTimeShared(peList))); // This is our machine
 			NetworkConstants.currentHostId++;
 		}
-		ram = 8192; // host memory (MB) = 8GB
+		ram = 262144; // host memory (MB) = 256GB
+		logicalCores = 64;
+		mips = 4600;
 		for (int i = 0; i <mid_cpu_ram_hosts; i++) { 
 			List<Pe> peList = new ArrayList<Pe>();
-			peList.add(new Pe(0, new PeProvisionerSimple(mips)));  
-			peList.add(new Pe(1, new PeProvisionerSimple(mips)));  
-			peList.add(new Pe(2, new PeProvisionerSimple(mips))); 
-			peList.add(new Pe(3, new PeProvisionerSimple(mips)));  
-			peList.add(new Pe(4, new PeProvisionerSimple(mips)));  
-			peList.add(new Pe(5, new PeProvisionerSimple(mips)));  
-			peList.add(new Pe(6, new PeProvisionerSimple(mips)));  
-			peList.add(new Pe(7, new PeProvisionerSimple(mips)));   
+			for(int coreId = 0; coreId<logicalCores; coreId++)
+				peList.add(new Pe(coreId, new PeProvisionerSimple(mips)));  
+			
 			
 			hostList.add( new NetworkHost(
 					NetworkConstants.currentHostId,
@@ -179,14 +138,17 @@ public class ManageSpineLeafDatacenter {
 				costPerBw);
 		
 		try {
+			System.out.println("TOTAL DC HOSTS 1:"+hostList.size());
 			if(VmAllcPolicy.compareTo("TDB") == 0){
-				VMPolicy = new VmAllocationPolicyTDB2(hostList);
+				VMPolicy = new VmAllocationPolicyNew(hostList);
 				//DCMngUtility.resultFile.println("VM palcement policy is TDB!");
 			}else if(VmAllcPolicy.compareTo("GREEDY") == 0){
 				VMPolicy = new VmAllocationPolicyGreedy2(hostList);
 				//DCMngUtility.resultFile.println("VM palcement policy is Greedy!");
 			}else if(VmAllcPolicy.compareTo("BFT") == 0){
 				VMPolicy = new VmAllocationPolicyBestFit(hostList);
+			}else if(VmAllcPolicy.compareTo("RR") == 0){ 
+			VMPolicy = new VmAllocationPolicyRoundRobin(hostList);
 			}else {
 				VMPolicy = new VmAllocationPolicyRandom(hostList);
 				//DCMngUtility.resultFile.println("VM palcement policy is Random!");
@@ -197,7 +159,7 @@ public class ManageSpineLeafDatacenter {
 					VMPolicy,
 					storageList,
 					0);
-			
+			datacenter.total_zone = 1;
 			datacenter.VmAllcPlcyTyp = NetworkConstants.VM_ALLC_PLCY_CLUSTER;
 			
 		
@@ -235,10 +197,11 @@ public class ManageSpineLeafDatacenter {
 				int hostno=0;
 				int highcpuhost = 0;
 				int highramhost = high_cpu_hosts;
-				int midramcpuhost = high_cpu_hosts+hig_ram_hosts;
+				int midramcpuhost = high_cpu_hosts+high_ram_hosts;
 				EdgeSwitch edgeswitch[] = new EdgeSwitch[numOfEdgeSwitch];
 				for (int i = 0; i < numOfEdgeSwitch; i++) {
 					edgeswitch[i] = new EdgeSwitch("leaf"+i, NetworkConstants.EDGE_LEVEL, datacenter);
+					edgeswitch[i].zone_number = 0;
 					edgeswitch[i].switching_delay = SwitchingDelayEdge;
 					edgeswitch[i].numport = LeafSwitchPorts;
 					edgeswitch[i].uplinkbandwidth = BandWidthLeafSpine;

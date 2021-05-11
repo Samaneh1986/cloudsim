@@ -55,7 +55,7 @@ public class NetworkCloudletSpaceSharedScheduler extends CloudletScheduler {
 	public Map<Integer, List<HostPacket>> pktrecv;
 	
 	public double inputData;
-	public double curStageData;
+	public double curStageData; 
 
 	/**
 	 * Creates a new CloudletSchedulerSpaceShared object. 
@@ -69,7 +69,7 @@ public class NetworkCloudletSpaceSharedScheduler extends CloudletScheduler {
 		cloudletWaitingList = new ArrayList<ResCloudlet>();
 		cloudletExecList = new ArrayList<ResCloudlet>();
 		cloudletPausedList = new ArrayList<ResCloudlet>();
-		cloudletFinishedList = new ArrayList<ResCloudlet>();
+		cloudletFinishedList = new ArrayList<ResCloudlet>(); 
 		usedPes = 0;
 		currentCpus = 0;
 		pkttosend = new HashMap<Integer, List<HostPacket>>();
@@ -105,6 +105,7 @@ public class NetworkCloudletSpaceSharedScheduler extends CloudletScheduler {
 			// CHECK WHETHER IT IS WAITING FOR THE PACKET
 			// if packet received change the status of job and update the time.
 			//
+			//System.out.println("Stage "+cl.currStagenum+" for cl "+cl.getCloudletId()+"is processing ");
 			if ((cl.currStagenum != -1)) {
 				if (cl.currStagenum == NetworkConstants.FINISH) {
 
@@ -113,7 +114,7 @@ public class NetworkCloudletSpaceSharedScheduler extends CloudletScheduler {
 				}
 				TaskStage st = cl.stages.get(cl.currStagenum);
 				if (st.type == NetworkConstants.EXECUTION) {
-				//	System.out.println("Stage for cl "+cl.getCloudletId()+"is EXE ");
+					//System.out.println("Stage for cl "+cl.getCloudletId()+"is EXE ");
 					// update the time
 					cl.timespentInStage = Math.round(CloudSim.clock() - cl.timetostartStage);
 					if (cl.timespentInStage >= st.time) {
@@ -124,8 +125,9 @@ public class NetworkCloudletSpaceSharedScheduler extends CloudletScheduler {
 				//reading data from storage
 				if (st.type == NetworkConstants.INPUT_READ) {
 					//if(cl.getCloudletId()==2)
-					//	System.out.println(" cl 2 in input phase");
+					//System.out.println(" cl "+cl.getCloudletId()+" in input phase");
 					double tempData = 0;
+					cl.inputWaitTime = CloudSim.clock();//time the input request sent
 					curStageData = st.data;
 					List<NetStorageBlock> request = new ArrayList<NetStorageBlock>();
 					while(tempData < curStageData){
@@ -150,20 +152,71 @@ public class NetworkCloudletSpaceSharedScheduler extends CloudletScheduler {
 				}
 				if (st.type == NetworkConstants.INPUT_READ_WAIT) {
 
-					//if(cl.getCloudletId()==2)
-					//	System.out.println(" cl 2 recieving "+this.inputData+" of "+ this.curStageData);
+					//if(cl.getCloudletId()==8)
+					//	System.out.println(" cl 8 recieving "+this.inputData+" of "+ this.curStageData+" in "+CloudSim.clock());
 		    		if(this.inputData >= this.curStageData){
 						this.inputData = 0;
+						//cl.setExecStartTime(CloudSim.clock());
+						cl.inputWaitTime = CloudSim.clock()-cl.inputWaitTime;
 						changetonextstage(cl, st);
 					}
-				}
+		    		//System.out.println("waiting for reading be finished");
+		    	}
 				//writing data to storage
-				if (st.type == NetworkConstants.OUTPUT_WRITE) {
-					
+				if (st.type == NetworkConstants.OUTPUT_STORAGE_REQ) {
+					CloudSim.send(NetDatacenterBroker.linkDC.getId(),
+							NetDatacenterBroker.linkDC.storageManagerId,
+							0.1, // delay
+							CloudSimTags.Storge_Output_Write,
+							cl);
 					changetonextstage(cl, st);
 				}
 				
+				//writing data to storage
+				if (st.type == NetworkConstants.OUTPUT_WRITE) {
+				//	System.out.println("OUTPUT write block size "+cl.outputData.size());
+					if(cl.outDataindex.size() == 0){
+						//System.out.println("send output for cl "+cl.getCloudletId());
+						//send the output only once
+						List<HostPacket> pktlist = new ArrayList<HostPacket>();
+						for(NetStorageBlock blk : cl.outputData){
+							int replica = 0;
+							for(Integer i  : blk.getStorageHostId()){
+								//for each replica send packet to storage
+								HostPacket pkt = new HostPacket(
+										cl.getVmId(),
+										blk.getIndex(),
+										replica,
+										CloudSim.clock(),
+										0,
+										cl.getCloudletId(),
+										-1); 
+								pkt.storageId = i;
+								pktlist.add(pkt);
+								replica++;
+							}
+						}
+	                    
+						pkttosend.put(cl.getVmId(), pktlist);
+						if(cl.outDataindex.size() > 0)
+							for(int r = 0 ; r<cl.outputData.get(0).getStorageHostId().size() ; r++)
+								cl.outDataindex.add(0);
+						//System.out.println("total replicas for cl "+cl.getCloudletId()+" is "+cl.outDataindex.size());
+					}
+					//wait until writing is finished
+					//System.out.println("output wrote for cl "+cl.getCloudletId()+" index "+cl.outDataindex);
+					int minCopyRecieved = Integer.MAX_VALUE;
+					for(int i = 0; i< cl.outDataindex.size() ; i++)
+						minCopyRecieved = Math.min(minCopyRecieved, cl.outDataindex.get(i));
+					if(minCopyRecieved >= cl.outputData.size()){
+						//System.out.println("finish output for cl "+cl.getCloudletId());
+						changetonextstage(cl, st);
+					}
+				}
+				
 				if (st.type == NetworkConstants.WAIT_RECV) {
+					//if(cl.getCloudletId() < 10)
+					//	System.out.println("Stage for cl "+cl.getCloudletId()+"is wait reciev from "+st.peer);
 					List<HostPacket> pktlist = pktrecv.get(st.peer);
 					List<HostPacket> pkttoremove = new ArrayList<HostPacket>();
 					if (pktlist != null) {
@@ -282,7 +335,7 @@ public class NetworkCloudletSpaceSharedScheduler extends CloudletScheduler {
 		cl.timespentInStage = 0;
 		cl.timetostartStage = CloudSim.clock();
 		int currstage = cl.currStagenum;
-		if (currstage >= (cl.stages.size() - 1)) {
+		if (currstage >= (cl.stages.size() - 1) && st.type != NetworkConstants.OUTPUT_WRITE) {
 			cl.currStagenum = NetworkConstants.FINISH;
 		} else {
 			cl.currStagenum = currstage + 1;
@@ -311,11 +364,14 @@ public class NetworkCloudletSpaceSharedScheduler extends CloudletScheduler {
 				}
 
 			}
-			NetDatacenterBroker.linkDC.schedule(
+			//if(st.type == NetworkConstants.OUTPUT_WRITE)
+			//	System.out.println("output write stage create last event .... "+this.pkttosend.size());
+			//System.out.println("sending new vm processing event for "+cl.currStagenum+" : "+i+" of "+cl.stages.size());
+    		NetDatacenterBroker.linkDC.schedule(
 						NetDatacenterBroker.linkDC.getId(),
-						0.0001,
+						0.11,
 						CloudSimTags.VM_DATACENTER_EVENT);
-			if (i == cl.stages.size()) {
+			if (i >= cl.stages.size()) {
 				cl.currStagenum = NetworkConstants.FINISH;
 			} else {
 				cl.currStagenum = i;
@@ -436,6 +492,7 @@ public class NetworkCloudletSpaceSharedScheduler extends CloudletScheduler {
 		getCloudletFinishedList().add(rcl);
 		usedPes -= rcl.getNumberOfPes();
 	}
+
 
 	@Override
 	public double cloudletResume(int cloudletId) {

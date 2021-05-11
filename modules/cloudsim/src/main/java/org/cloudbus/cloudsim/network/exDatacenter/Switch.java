@@ -163,13 +163,17 @@ public class Switch extends SimEntity {
 	public int EG_NS; // number of available servers connected to this switch
 	public String EG_value = null;
     public double EG_SCORE=0; // the membership degree of this switch for eligibility
-
+    public int zone_number = -1; // the zone of the rack, get value when creating the DC
+	
     public int EG_MAX_NS=0; // Max available servers connected to downlink switches
         /**
          * A map of VMs connected to this switch.
          * @todo The list doesn't appear to be updated (VMs added to it) anywhere. 
          */
 	public Map<Integer, NetworkVm> Vmlist = new HashMap<Integer, NetworkVm>();
+	
+	//For evaluation
+	public double maxLinkTraffic = 0;
 
 	public Switch(String name, int level, NetworkDatacenter dc) {
 		super(name);
@@ -188,6 +192,7 @@ public class Switch extends SimEntity {
 
 	@Override
 	public void processEvent(SimEvent ev) {
+		
 		// Log.printLine(CloudSim.clock()+"[Broker]: event received:"+ev.getTag()); 
 		switch (ev.getTag()) {
 		// Resource characteristics request
@@ -219,6 +224,35 @@ public class Switch extends SimEntity {
 				break;
 		}
 		
+		//added for evaluating network traffic
+				double maxpacketTohost = 0;
+				double maxpacketToswitch = 0;
+				double temp = 0;
+				if(packetTohost != null) {
+				for(int hostId : packetTohost.keySet()) {
+					for(NetworkPacket npkt : packetTohost.get(hostId))
+					    temp = temp + npkt.pkt.data;
+					if(temp > maxpacketTohost)
+						maxpacketTohost = temp;
+				}
+				}
+				maxpacketTohost = (maxpacketTohost*8) / this.downlinkbandwidth;
+				if(this.maxLinkTraffic < maxpacketTohost)
+					this.maxLinkTraffic = maxpacketTohost;
+				temp = 0;
+				if(uplinkswitchpktlist != null ) {
+				for(int swId : uplinkswitchpktlist.keySet()) {
+					for(NetworkPacket npkt : uplinkswitchpktlist.get(swId))
+					    temp = temp + npkt.pkt.data;
+					if(temp > maxpacketToswitch)
+						maxpacketToswitch = temp;
+				}
+				}
+				maxpacketToswitch = (maxpacketToswitch*8) / this.uplinkbandwidth;
+				if(this.maxLinkTraffic < maxpacketToswitch)
+					this.maxLinkTraffic = maxpacketToswitch;
+				
+				
 	}
 
         /**
@@ -230,7 +264,7 @@ public class Switch extends SimEntity {
 		NetworkPacket hspkt = (NetworkPacket) ev.getData();
 		//if(hspkt.pkt.hashCode()==504527234)
 		//	System.out.println("last process 504527234 in switch "+this.getName()+" storage id "+hspkt.pkt.storageId);
-		if(hspkt.pkt.storageId >= 0)
+		if(hspkt.pkt.storageId > -1 && hspkt.pkt.reciever > -1)
 			processstoragepacket(ev);
 		NetworkHost hs = hostlist.get(hspkt.recieverhostid);
 		hs.packetrecieved.add(hspkt);
